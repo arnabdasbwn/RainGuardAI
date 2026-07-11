@@ -8,6 +8,33 @@ import { Storage } from './storage.js';
 const PRIMARY_MODEL = 'gemini-3.5-flash';
 const FALLBACK_MODEL = 'gemini-2.5-flash';
 
+const LANGUAGE_NAMES = {
+  en: 'English',
+  hi: 'Hindi (हिंदी)',
+  bn: 'Bengali (বাংলা)',
+  te: 'Telugu (తెలుగు)',
+  ta: 'Tamil (தமிழ்)',
+  mr: 'Marathi (मराठी)',
+  gu: 'Gujarati (ગુજરાતી)',
+  kn: 'Kannada (ಕನ್ನಡ)',
+  ml: 'Malayalam (മലയാളം)',
+  pa: 'Punjabi (ਪੰਜਾਬੀ)',
+  or: 'Odia (ଓଡ଼ିଆ)',
+  as: 'Assamese (অসমীয়া)',
+  ur: 'Urdu (اردو)',
+  ne: 'Nepali (नेपाली)',
+  sd: 'Sindhi (سنڌي)',
+  ks: 'Kashmiri (कॉशुर / كٲشُر)',
+  kok: 'Konkani',
+  mai: 'Maithili (मैथिली)',
+  sa: 'Sanskrit (संस्कृतम्)',
+  es: 'Spanish (Español)',
+  fr: 'French (Français)',
+  de: 'German (Deutsch)',
+  zh: 'Simplified Chinese (中文)',
+  ar: 'Arabic (العربية)'
+};
+
 const SYSTEM_INSTRUCTIONS = {
   plan: `You are a Senior Emergency Preparedness Advisor specializing in monsoon and flood resilience.
 Your job is to generate a comprehensive, highly personalized monsoon preparedness plan based on the user's profile.
@@ -16,7 +43,7 @@ Rules:
 2. If the user resides in low-lying ground floors, emphasize elevating appliances, gas canisters, and electrical systems.
 3. If they have pets, infants, or elderly members, allocate specific emergency items and steps for them.
 4. Output your answer in clean Markdown, using bold headers and lists.
-5. Answer strictly in the requested language. If language is Hindi, reply in fluent, easy-to-read Hindi.`,
+5. Answer strictly in the requested language using clear public-safety wording.`,
 
   travel: `You are a Commuter Safety Officer during severe weather.
 Evaluate the safety of a commuter's travel plan based on their origin, destination, transit mode, and weather.
@@ -24,7 +51,7 @@ Rules:
 1. Provide an overall Safety Rating: 'Green: Safe', 'Yellow: Caution', or 'Red: Do Not Travel'.
 2. Give clear reasoning (e.g., two-wheelers are extremely unsafe in heavy winds, low-lying routes are prone to waterlogging).
 3. Offer concrete safety guidelines for their specific mode of travel.
-4. Output in clean Markdown. Answer in the requested language (English or Hindi).`,
+4. Output in clean Markdown. Answer in the requested language.`,
 
   chat: `You are a resilient Emergency First Responder Chatbot. You assist users with monsoon safety, home waterproofing, health risks, and first aid queries.
 Rules:
@@ -32,7 +59,7 @@ Rules:
 2. In case of medical emergencies or injuries, instruct the user to contact emergency services immediately (National Emergency: 112, Ambulance: 108).
 3. For waterborne diseases (like Dengue, Cholera, Leptospirosis), prioritize clean drinking water, sanitation, and seeing a doctor.
 4. Keep answers concise, structured, and easy to read on mobile.
-5. Answer in the requested language (English or Hindi).`
+5. Answer in the requested language.`
 };
 
 export const Gemini = {
@@ -44,7 +71,7 @@ export const Gemini = {
    * @returns {Promise<string>}
    */
   async generateContent(systemInstruction, prompt, lang = 'en') {
-    const languageInstruction = ` Respond strictly in ${lang === 'hi' ? 'Hindi (हिंदी)' : 'English'}.`;
+    const languageInstruction = ` Respond strictly in ${LANGUAGE_NAMES[lang] || 'English'}.`;
     const fullSystem = systemInstruction + languageInstruction;
 
     const requestBody = {

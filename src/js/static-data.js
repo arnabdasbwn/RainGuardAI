@@ -11,6 +11,80 @@ export const EMERGENCY_CONTACTS = [
   { name: 'Water Logging / Municipal Helpline', phone: '1916', description: 'Flooding and municipal drainage issues' }
 ];
 
+export const COUNTRY_EMERGENCY_CONTACTS = {
+  india: [
+    { name: 'India Emergency Response Support System', phone: '112', description: 'Police, fire, medical, and disaster emergency response' },
+    { name: 'Ambulance / Medical Emergency', phone: '108', description: 'Emergency medical assistance' },
+    { name: 'Fire Services', phone: '101', description: 'Fire and structural emergencies' }
+  ],
+  'united states': [
+    { name: 'United States Emergency Services', phone: '911', description: 'Police, fire, and medical emergencies' },
+    { name: 'Suicide & Crisis Lifeline', phone: '988', description: 'Mental health crisis support' }
+  ],
+  usa: [
+    { name: 'United States Emergency Services', phone: '911', description: 'Police, fire, and medical emergencies' },
+    { name: 'Suicide & Crisis Lifeline', phone: '988', description: 'Mental health crisis support' }
+  ],
+  germany: [
+    { name: 'Germany Fire & Ambulance', phone: '112', description: 'Fire brigade and emergency medical services' },
+    { name: 'Germany Police', phone: '110', description: 'Police emergencies' }
+  ],
+  china: [
+    { name: 'China Police', phone: '110', description: 'Police emergencies' },
+    { name: 'China Fire Brigade', phone: '119', description: 'Fire emergencies' },
+    { name: 'China Ambulance', phone: '120', description: 'Medical emergencies' },
+    { name: 'China Traffic Accident', phone: '122', description: 'Road traffic accidents' }
+  ],
+  'united kingdom': [
+    { name: 'UK Emergency Services', phone: '999', description: 'Police, fire, ambulance, and coastguard' },
+    { name: 'UK / European Emergency Number', phone: '112', description: 'Equivalent emergency access number in the UK' },
+    { name: 'NHS 111', phone: '111', description: 'Urgent medical help when it is not life-threatening' }
+  ],
+  france: [
+    { name: 'European Emergency Number', phone: '112', description: 'General emergency assistance' },
+    { name: 'France Ambulance / SAMU', phone: '15', description: 'Medical emergencies' },
+    { name: 'France Police', phone: '17', description: 'Police emergencies' },
+    { name: 'France Fire Brigade', phone: '18', description: 'Fire and rescue' }
+  ],
+  spain: [
+    { name: 'Spain Emergency Services', phone: '112', description: 'Police, fire, and medical emergencies' }
+  ],
+  italy: [
+    { name: 'Italy Emergency Services', phone: '112', description: 'Police, fire, and medical emergencies' }
+  ],
+  australia: [
+    { name: 'Australia Emergency Services', phone: '000', description: 'Police, fire, and ambulance emergencies' },
+    { name: 'Australia Emergency Services Alternate', phone: '112', description: 'Mobile emergency access on GSM networks' }
+  ],
+  japan: [
+    { name: 'Japan Police', phone: '110', description: 'Police emergencies' },
+    { name: 'Japan Fire & Ambulance', phone: '119', description: 'Fire and medical emergencies' }
+  ],
+  singapore: [
+    { name: 'Singapore Police', phone: '999', description: 'Police emergencies' },
+    { name: 'Singapore Fire & Ambulance', phone: '995', description: 'Fire and medical emergencies' }
+  ],
+  malaysia: [
+    { name: 'Malaysia Emergency Services', phone: '999', description: 'Police, fire, and ambulance emergencies' }
+  ],
+  bangladesh: [
+    { name: 'Bangladesh National Emergency Service', phone: '999', description: 'Police, fire, and ambulance emergencies' }
+  ],
+  'united arab emirates': [
+    { name: 'UAE Police', phone: '999', description: 'Police emergencies' },
+    { name: 'UAE Ambulance', phone: '998', description: 'Medical emergencies' },
+    { name: 'UAE Fire / Civil Defence', phone: '997', description: 'Fire emergencies' }
+  ],
+  canada: [
+    { name: 'Canada Emergency Services', phone: '911', description: 'Police, fire, and medical emergencies' },
+    { name: 'Suicide Crisis Helpline', phone: '988', description: 'Mental health crisis support' }
+  ],
+  default: [
+    { name: 'Local Emergency Services', phone: '112', description: 'Common emergency number in many countries; verify locally when possible' },
+    { name: 'Alternate Emergency Number', phone: '911', description: 'Common emergency number in North America and some countries' }
+  ]
+};
+
 export const STATIC_CHECKLISTS = {
   basic: [
     { id: 'b1', text: 'Drinking water (minimum 3 liters per person per day, store for 3 days)', category: 'Survival' },
@@ -840,6 +914,31 @@ export const TRANSLATIONS = {
     offline_banner_text: "⚠️ أنت غير متصل بالإنترنت حالياً. تم تفعيل الوضع المحلي الآمن."
   }
 };
+
+const TRANSLATION_FALLBACKS = {
+  gu: 'hi',
+  kn: 'en',
+  ml: 'en',
+  pa: 'hi',
+  or: 'hi',
+  as: 'bn',
+  ur: 'hi',
+  ne: 'hi',
+  sd: 'hi',
+  ks: 'hi',
+  kok: 'mr',
+  mai: 'hi',
+  sa: 'hi',
+  de: 'en',
+  zh: 'en'
+};
+
+Object.entries(TRANSLATION_FALLBACKS).forEach(([lang, fallback]) => {
+  TRANSLATIONS[lang] = {
+    ...TRANSLATIONS.en,
+    ...(TRANSLATIONS[fallback] || {})
+  };
+});
 
 /**
  * Dynamically constructs a personalized preparedness plan template if API key is missing.

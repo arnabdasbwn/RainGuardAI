@@ -2,6 +2,8 @@
 
 > **A GenAI-powered, highly accessible, resilient client-side web application designed to safeguard families and communities before, during, and after monsoon disasters.**
 
+> Development note: RainGuard AI is a vibe-coded, AI-assisted application built with GPT-5-class Codex assistance and Google Gemini Flash 3.5 integration.
+
 ---
 
 ## 1. Project Overview
@@ -18,7 +20,7 @@ This platform aligns directly with the monsoon preparedness challenge by integra
 3.  **Emergency Checklists**: Locally persistent checklist manager that auto-injects specialized items based on family profiles (infants, elderly, pets, chronic illness).
 4.  **Travel Advisories**: Route hazard sentinel evaluating transit modes (walking, two-wheeler, car, train) against local rainfall risks.
 5.  **Before, During, and After Guidance**: Easy-to-read safety manuals for all storm phases, coupled with verified national disaster helpline contacts.
-6.  **Multilingual Assistance**: Responsive UI and GenAI safety advisor operating in English and Hindi.
+6.  **Multilingual Assistance**: Responsive UI and GenAI safety advisor covering major Indian languages, German, Chinese, Spanish, French, Arabic, and English.
 7.  **Real-Time Alerts**: Dynamic hazard warning banners that respond to active storm classifications.
 
 ---
@@ -30,6 +32,7 @@ This platform aligns directly with the monsoon preparedness challenge by integra
 *   **Travel Sentinel**: Route and transit-mode risk advisory based on current weather, Gemini reasoning, and local fallback heuristics.
 *   **Safety Hub**: Before/during/after monsoon guidance plus national and city-aware emergency contacts.
 *   **AI Safety Responder**: Multilingual responder for flood, health, waterproofing, and preparedness questions with medical safety guardrails.
+*   **International Emergency Contacts**: Contacts adapt to the detected country for India, US, UK, Germany, China, EU/common 112 countries, and other common travel destinations.
 *   **Accessibility Controls**: Language selector, text-size selector, light/dark/high-contrast themes, keyboard navigation, and ARIA live regions.
 
 ---
@@ -46,7 +49,7 @@ We prioritized **extreme deployment reliability, loading speed, and offline resi
 ---
 
 ## 5. AI Services Used
-*   **Google Gemini API**: Uses `gemini-3.5-flash` through the server-side `/api/gemini` proxy when a Gemini API key is configured on the server, with model fallback support.
+*   **Google Gemini API**: Uses Gemini Flash 3.5 (`gemini-3.5-flash`) through the server-side `/api/gemini` proxy when a Gemini API key is configured on the server, with model fallback support.
     *   *Plan Advisor*: Tailors preparedness actions based on family profiling.
     *   *Travel Sentinel*: Computes safety ratings (Green, Yellow, Red) based on route and transit type.
     *   *First Responder Chat*: Interactive safety Q&A chatbot.
@@ -74,6 +77,7 @@ graph TD
 *   **Resiliency Design**: Weather forecasts are cached locally in `sessionStorage` for 15 minutes to reduce API overhead.
 *   **Security & Privacy**: No backend database. User inputs and active checklists are stored in the user's browser (`localStorage`). Gemini API keys should be configured as server environment variables.
 *   **Input Handling**: User-entered city, profile, route, and chat inputs are trimmed, length-limited, validated, and escaped before being displayed in HTML.
+*   **Country-Aware Contacts**: Weather geocoding returns a country name; the Safety Hub uses that country to display local emergency numbers when available.
 
 ---
 

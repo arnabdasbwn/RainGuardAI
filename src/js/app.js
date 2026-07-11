@@ -7,6 +7,7 @@ import { Weather } from './weather.js';
 import { Gemini } from './gemini.js';
 import { 
   EMERGENCY_CONTACTS, 
+  COUNTRY_EMERGENCY_CONTACTS,
   STATIC_CHECKLISTS, 
   DISASTER_GUIDELINES, 
   compileFallbackPreparednessPlan,
@@ -140,7 +141,9 @@ function sendSystemNotification(title, body) {
 // Get city-specific emergency contacts
 function getCityContacts(cityName, lang) {
   if (!cityName) return [];
-  const baseCity = cityName.split(',')[0].replace(/(NE|SW|SE|NW|North|South|East|West)?\s*Sector/gi, '').trim();
+  const locationParts = cityName.split(',').map(part => part.trim()).filter(Boolean);
+  const baseCity = locationParts[0].replace(/(NE|SW|SE|NW|North|South|East|West)?\s*Sector/gi, '').trim();
+  const country = (locationParts[locationParts.length - 1] || 'India').toLowerCase();
   const isHi = lang === 'hi';
   
   const knownCities = {
@@ -200,11 +203,15 @@ function getCityContacts(cityName, lang) {
   };
 
   const key = baseCity.toLowerCase();
-  if (knownCities[key]) {
+  if (country.includes('india') && knownCities[key]) {
     return knownCities[key];
   }
 
-  // Generative fallback for any other city
+  if (!country.includes('india')) {
+    return COUNTRY_EMERGENCY_CONTACTS[country] || COUNTRY_EMERGENCY_CONTACTS.default;
+  }
+
+  // Local fallback for other Indian cities
   return [
     {
       name: isHi ? `${baseCity} नगर निगम (नियंत्रण कक्ष)` : `${baseCity} Municipality Control Room`,
@@ -433,6 +440,9 @@ function updateLanguageTexts() {
       }
     }
   });
+
+  document.documentElement.lang = State.lang;
+  document.documentElement.dir = ['ar', 'ur'].includes(State.lang) ? 'rtl' : 'ltr';
 }
 
 // 4. Weather Dashboard controller
@@ -1218,14 +1228,18 @@ function renderEmergencyContacts() {
   
   // Get city-specific contacts based on active weather location
   let localContacts = [];
+  let isIndiaLocation = true;
   if (State.currentWeather && State.currentWeather.cityName) {
     localContacts = getCityContacts(State.currentWeather.cityName, State.lang);
+    const parts = State.currentWeather.cityName.split(',').map(part => part.trim()).filter(Boolean);
+    const country = (parts[parts.length - 1] || 'India').toLowerCase();
+    isIndiaLocation = country.includes('india');
   } else {
     localContacts = getCityContacts('Mumbai', State.lang);
   }
   
-  // Prepend local contacts to the national/global list
-  const allContacts = [...localContacts, ...EMERGENCY_CONTACTS];
+  // Prepend city/country-aware contacts. India gets additional national disaster contacts.
+  const allContacts = isIndiaLocation ? [...localContacts, ...EMERGENCY_CONTACTS] : localContacts;
   
   allContacts.forEach(contact => {
     const card = document.createElement('div');
