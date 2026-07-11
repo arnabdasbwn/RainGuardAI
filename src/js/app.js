@@ -375,76 +375,86 @@ function initSettings() {
   document.documentElement.setAttribute('data-theme', savedTheme);
   themeSelect.value = savedTheme;
 
-  const savedApiKey = localStorage.getItem('rainguard_gemini_api_key');
-  if (savedApiKey) {
-    inputApiKey.value = savedApiKey;
+  // Language Change handler
+  if (langSelect) {
+    langSelect.addEventListener('change', (e) => {
+      State.lang = e.target.value;
+      updateLanguageTexts();
+      renderGuidelines();
+      renderEmergencyContacts();
+      renderChecklist();
+      if (State.currentWeather) {
+        updateWeatherCard(State.currentWeather);
+      }
+    });
   }
 
-  // Language Change handler
-  langSelect.addEventListener('change', (e) => {
-    State.lang = e.target.value;
-    updateLanguageTexts();
-    renderGuidelines();
-    renderEmergencyContacts();
-    renderChecklist();
-    if (State.currentWeather) {
-      updateWeatherCard(State.currentWeather);
-    }
-  });
-
   // Font Size change handler
-  sizeSelect.addEventListener('change', (e) => {
-    document.documentElement.setAttribute('data-size', e.target.value);
-  });
+  if (sizeSelect) {
+    sizeSelect.addEventListener('change', (e) => {
+      document.documentElement.setAttribute('data-size', e.target.value);
+    });
+  }
 
   // Theme change handler
-  themeSelect.addEventListener('change', (e) => {
-    const selectedTheme = e.target.value;
-    document.documentElement.setAttribute('data-theme', selectedTheme);
-    Storage.setTheme(selectedTheme);
-  });
+  if (themeSelect) {
+    themeSelect.addEventListener('change', (e) => {
+      const selectedTheme = e.target.value;
+      document.documentElement.setAttribute('data-theme', selectedTheme);
+      Storage.setTheme(selectedTheme);
+    });
+  }
 
-  // Modal Open
-  btnApiModal.addEventListener('click', () => {
-    apiModal.classList.add('active');
-    inputApiKey.focus();
-  });
+  if (btnApiModal && apiModal && formApiSettings) {
+    const savedApiKey = localStorage.getItem('rainguard_gemini_api_key');
+    if (savedApiKey && inputApiKey) {
+      inputApiKey.value = savedApiKey;
+    }
 
-  // Modal Close
-  const closeModal = () => {
-    apiModal.classList.remove('active');
-    btnApiModal.focus();
-  };
-  
-  btnModalClose.addEventListener('click', closeModal);
-  
-  // Close on Escape key
-  window.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' && apiModal.classList.contains('active')) {
+    // Modal Open
+    btnApiModal.addEventListener('click', () => {
+      apiModal.classList.add('active');
+      if (inputApiKey) inputApiKey.focus();
+    });
+
+    // Modal Close
+    const closeModal = () => {
+      apiModal.classList.remove('active');
+      btnApiModal.focus();
+    };
+    
+    if (btnModalClose) btnModalClose.addEventListener('click', closeModal);
+    
+    // Close on Escape key
+    window.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && apiModal.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    // API Form Submit
+    formApiSettings.addEventListener('submit', (e) => {
+      e.preventDefault();
+      if (inputApiKey) Storage.setApiKey(inputApiKey.value);
       closeModal();
-    }
-  });
+      // Trigger advisory update on dashboard
+      if (State.currentWeather) {
+        triggerAiAdvisory(State.currentWeather);
+      }
+    });
 
-  // API Form Submit
-  formApiSettings.addEventListener('submit', (e) => {
-    e.preventDefault();
-    Storage.setApiKey(inputApiKey.value);
-    closeModal();
-    // Trigger advisory update on dashboard
-    if (State.currentWeather) {
-      triggerAiAdvisory(State.currentWeather);
+    // API Clear
+    if (btnApiClear) {
+      btnApiClear.addEventListener('click', () => {
+        if (inputApiKey) inputApiKey.value = '';
+        Storage.setApiKey(null);
+        closeModal();
+        if (State.currentWeather) {
+          triggerAiAdvisory(State.currentWeather);
+        }
+      });
     }
-  });
-
-  // API Clear
-  btnApiClear.addEventListener('click', () => {
-    inputApiKey.value = '';
-    Storage.setApiKey(null);
-    closeModal();
-    if (State.currentWeather) {
-      triggerAiAdvisory(State.currentWeather);
-    }
-  });
+  }
 }
 
 // 3. Language Translation Engine

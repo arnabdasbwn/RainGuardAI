@@ -56,10 +56,6 @@
         <option value="contrast">High Contrast (Accessibility)</option>
       </select>
 
-      <!-- API Settings Trigger -->
-      <button id="btn-api-modal" class="btn-primary" aria-haspopup="dialog" aria-controls="modal-api-settings" data-i18n="api_settings">
-        🔑 API Settings
-      </button>
     </div>
   </header>
 
@@ -399,30 +395,7 @@
     <p data-i18n="footer">© 2026 RainGuard AI. Preparedness safeguards lives. Protect your community.</p>
   </footer>
 
-  <!-- ============================================== -->
-  <!-- MODAL DIALOG: API SETTINGS -->
-  <!-- ============================================== -->
-  <div id="modal-api-settings" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h3 id="modal-title" data-i18n="title_api">API Configurations</h3>
-        <button id="btn-modal-close" class="modal-close" aria-label="Close Settings Modal">&times;</button>
-      </div>
-      <form id="form-api-settings">
-        <div class="form-group">
-          <label for="input-api-key" data-i18n="label_api_key">Google Gemini API Key</label>
-          <input type="text" id="input-api-key" placeholder="AIzaSy..." autocomplete="off">
-          <p style="font-size: var(--font-size-xs); color: var(--text-secondary); margin-top: 0.5rem;" data-i18n="sub_api_key">
-            This key is saved locally in your browser (session storage/local storage) and is only sent directly to Google's GenAI endpoint.
-          </p>
-        </div>
-        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
-          <button type="button" id="btn-api-clear" style="background-color: transparent; border-color: var(--alert-danger); color: var(--alert-danger);" data-i18n="btn_clear_key">Clear Key</button>
-          <button type="submit" class="btn-primary" data-i18n="btn_save_settings">Save Settings</button>
-        </div>
-      </form>
-    </div>
-  </div>
+
 
   <!-- Modules Core script binding -->
   <script type="module" src="src/js/app.js"></script>
