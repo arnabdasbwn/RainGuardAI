@@ -741,7 +741,7 @@ function updateWeatherCard(data) {
   const badgeText = {
     safe: { en: 'Low Risk', hi: 'कम जोखिम', bn: 'কম ঝুঁকি', te: 'తక్కువ ముప్పు', ta: 'குறைந்த வெள்ள அபாயம்', mr: 'कमी धोका', es: 'Bajo Riesgo', fr: 'Faible Risque', ar: 'خطر منخفض' },
     caution: { en: 'Caution', hi: 'सावधानी', bn: 'সতর্কতা', te: 'జాగ్రत्त', ta: 'எச்சரிக்கை', mr: 'सावधानता', es: 'Precaución', fr: 'Précaution', ar: 'حذر' },
-    alert: { en: 'High Danger', hi: 'उच्च खतरा', bn: 'উচ্চ বিপদ', te: 'అధిక ముప్పు', ta: 'அதிவேக ஆபத்து', mr: 'उच्च धोका', es: 'Peligro', fr: 'Danger Élevé', ar: 'خطر مرتفع' }
+    alert: { en: 'High Danger', hi: 'उच्च खतरा', bn: 'উচ্চ বিপদ', te: 'అధిక ముప్పు', ta: 'అதிவேக ஆபத்து', mr: 'उच्च धोका', es: 'Peligro', fr: 'Danger Élevé', ar: 'خطر مرتفع' }
   };
   weatherBadge.querySelector('span').innerText = badgeText[meta.alert][State.lang] || badgeText[meta.alert]['en'];
 
@@ -766,8 +766,25 @@ async function triggerAiAdvisory(weatherData) {
   const timestampEl = document.getElementById('quick-alert-timestamp');
   container.innerHTML = `<div class="skeleton-pulse skeleton-text"></div><div class="skeleton-pulse skeleton-text" style="width: 80%;"></div>`;
   
-  const hasKey = hasRealApiKey();
-  if (!hasKey) {
+  try {
+    const prompt = `Based on the location: ${weatherData.cityName}, temp: ${weatherData.temp}°C, precip: ${weatherData.precipitation}mm, wind: ${weatherData.windSpeed} km/h, and condition description: ${Weather.getWeatherMeta(weatherData.weatherCode, 'en').text}. Write a short 3-sentence advisory explaining immediate precautions users should take right now.`;
+    
+    const instruction = "You are a weather hazard warning system. Keep your output to exactly 3 lines of bullet points, highly actionable.";
+    const response = await Gemini.generateContent(instruction, prompt, State.lang);
+    container.innerHTML = parseMarkdown(response);
+    
+    const liveLabel = {
+      en: 'Live GenAI Warning Advisory Active',
+      hi: 'लाइव एआई चेतावनी सक्रिय',
+      bn: 'লাইভ এআই অ্যাডভাইसरी সক্রিয়',
+      es: 'Asesoramiento GenAI en Vivo Activo',
+      fr: 'Alerte GenAI en Direct Active',
+      ar: 'نصيحة الذكاء الاصطناعي الحيّة نشطة'
+    };
+    timestampEl.innerText = liveLabel[State.lang] || liveLabel['en'];
+  } catch (err) {
+    console.warn('Dashboard live advisory failed, utilizing local static advisory fallback.', err);
+    
     const meta = Weather.getWeatherMeta(weatherData.weatherCode, State.lang);
     let advice = '';
     const name = weatherData.cityName;
@@ -880,32 +897,23 @@ function initProfiler() {
     planContainer.style.display = 'none';
     planLoading.style.display = 'block';
     
-    const hasKey = hasRealApiKey();
-    if (!hasKey) {
-      // API Key missing, compile dynamic fallback plan
-      setTimeout(() => {
-        const planHtml = compileFallbackPreparednessPlan(profile, State.lang);
-        planOutput.innerHTML = `
-          <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--alert-caution); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-caution); font-weight: 500;">
-            ⚠️ ${State.lang === 'en' ? 'API Key not provided. Displaying local dynamic plan based on your profile inputs.' : 'एपीआई कुंजी नहीं मिली। आपके प्रोफाइल के अनुसार स्थानीय योजना प्रदर्शित की जा रही है।'}
-          </div>
-          ${parseMarkdown(planHtml)}
-        `;
-        planLoading.style.display = 'none';
-        planContainer.style.display = 'block';
-      }, 800);
-      return;
-    }
-    
     try {
       const planMarkdown = await Gemini.generatePreparednessPlan(profile, State.lang);
       planOutput.innerHTML = parseMarkdown(planMarkdown);
     } catch (err) {
       console.error('Plan generation failed', err);
       const planHtml = compileFallbackPreparednessPlan(profile, State.lang);
+      
+      let warningMessage = '';
+      if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
+        warningMessage = `⚠️ ${State.lang === 'en' ? 'API Key not provided. Displaying local dynamic plan based on your profile inputs.' : 'एपीआई कुंजी नहीं मिली। आपके प्रोफाइल के अनुसार स्थानीय योजना प्रदर्शित की जा रही है।'}`;
+      } else {
+        warningMessage = `❌ ${State.lang === 'en' ? 'GenAI Service error. Switched to local dynamic fallback plan.' : 'जेनेरेटिव एआई सेवा त्रुटि। स्थानीय फॉलबैक सुरक्षा योजना लोड की गई है।'}`;
+      }
+
       planOutput.innerHTML = `
-        <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid var(--alert-danger); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-danger);">
-          ❌ ${State.lang === 'en' ? 'GenAI Service error. Switched to local dynamic fallback plan.' : 'जेनेरेटिव एआई सेवा त्रुटि। स्थानीय फॉलबैक सुरक्षा योजना लोड की गई है।'} (${err.message})
+        <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--alert-caution); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-caution); font-weight: 500;">
+          ${warningMessage} ${err.message.includes('Proxy Error') ? `(${err.message})` : ''}
         </div>
         ${parseMarkdown(planHtml)}
       `;
@@ -1068,32 +1076,27 @@ function initTravelSentinel() {
     // Check if weather data exists
     const weather = State.currentWeather || { temp: 28, precipitation: 5, windSpeed: 10, weatherCode: 61 };
     
-    const hasKey = hasRealApiKey();
-    if (!hasKey) {
-      setTimeout(() => {
-        // Fallback Travel Evaluator
-        const fallbackText = getFallbackTravelAdvisory(details, weather);
-        travelOutput.innerHTML = `
-          <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--alert-caution); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-caution); font-weight: 500;">
-            ⚠️ ${State.lang === 'en' ? 'API Key not provided. Evaluating travel risks using local static engine.' : 'एपीआई कुंजी नहीं मिली। स्थानीय विश्लेषण इंजन द्वारा यात्रा सुरक्षा का आकलन किया गया है।'}
-          </div>
-          ${parseMarkdown(fallbackText)}
-        `;
-        travelLoading.style.display = 'none';
-        travelContainer.style.display = 'block';
-      }, 700);
-      return;
-    }
-    
     try {
       const advisory = await Gemini.generateTravelAdvisory(details, weather, State.lang);
       travelOutput.innerHTML = parseMarkdown(advisory);
     } catch (err) {
       console.error('Travel Sentinel failed', err);
       const fallbackText = getFallbackTravelAdvisory(details, weather);
+      
+      let warningMessage = '';
+      if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
+        warningMessage = State.lang === 'en'
+          ? 'API Key not provided. Evaluating travel risks using local static engine.'
+          : 'एपीआई कुंजी नहीं मिली। स्थानीय विश्लेषण इंजन द्वारा यात्रा सुरक्षा का आकलन किया गया है।';
+      } else {
+        warningMessage = State.lang === 'en'
+          ? 'GenAI service query failed. Displaying local travel safety analysis.'
+          : 'एआई विश्लेषण विफल। स्थानीय डेटा के आधार पर मार्ग सुरक्षा प्रदर्शित की जा रही है।';
+      }
+
       travelOutput.innerHTML = `
-        <div style="background-color: rgba(239, 68, 68, 0.1); border: 1px solid var(--alert-danger); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-danger);">
-          ❌ ${State.lang === 'en' ? 'GenAI service query failed. Displaying local travel safety analysis.' : 'एआई विश्लेषण विफल। स्थानीय डेटा के आधार पर मार्ग सुरक्षा प्रदर्शित की जा रही है।'} (${err.message})
+        <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--alert-caution); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-caution); font-weight: 500;">
+          ⚠️ ${warningMessage} ${err.message.includes('Proxy Error') ? `(${err.message})` : ''}
         </div>
         ${parseMarkdown(fallbackText)}
       `;
@@ -1294,30 +1297,30 @@ function initChatbot() {
     // Add loading indicator
     const loadingBubble = appendChatBubble('model', `<div class="skeleton-pulse skeleton-text" style="width: 150px;"></div>`);
     
-    const hasKey = hasRealApiKey();
-    if (!hasKey) {
-      setTimeout(() => {
-        loadingBubble.remove();
-        // Fallback keyword-matching search
-        const fallbackAnswer = getFallbackChatAnswer(question);
-        appendChatBubble('model', parseMarkdown(fallbackAnswer));
-        State.chatHistory.push({ role: 'model', text: fallbackAnswer });
-      }, 600);
-      return;
-    }
-    
     try {
       const response = await Gemini.askSafetyQuestion(question, State.chatHistory, State.lang);
       loadingBubble.remove();
       appendChatBubble('model', parseMarkdown(response));
       State.chatHistory.push({ role: 'model', text: response });
     } catch (err) {
-      console.error('Chat Q&A failed', err);
+      console.warn('Chat Q&A failed, using local static responder fallback.', err);
       loadingBubble.remove();
       const fallbackAnswer = getFallbackChatAnswer(question);
+      
+      let warningMessage = '';
+      if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
+        warningMessage = State.lang === 'en'
+          ? 'API Key not provided. Switched to offline keyword matcher.'
+          : 'एपीआई कुंजी नहीं मिली। स्थानीय खोज इंजन सक्रिय किया गया है।';
+      } else {
+        warningMessage = State.lang === 'en'
+          ? 'GenAI API connection issue. Switched to offline keyword matcher.'
+          : 'जेनेरेटिव एआई सेवा त्रुटि। स्थानीय खोज इंजन सक्रिय किया गया है।';
+      }
+
       appendChatBubble('model', `
         <div style="color: var(--alert-danger); margin-bottom: 0.5rem; font-size: var(--font-size-xs);">
-          ⚠️ ${State.lang === 'en' ? 'GenAI API connection issue. Switched to offline keyword matcher.' : 'जेनेरेटिव एआई सेवा त्रुटि। स्थानीय खोज इंजन सक्रिय किया गया है।'}
+          ⚠️ ${warningMessage} ${err.message.includes('Proxy Error') ? `(${err.message})` : ''}
         </div>
         ${parseMarkdown(fallbackAnswer)}
       `);
