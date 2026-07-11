@@ -34,12 +34,12 @@ We prioritized **extreme deployment reliability, loading speed, and offline resi
 ---
 
 ## 4. AI Services Used
-*   **Google Gemini API**: Uses `gemini-2.5-flash` (with a transparent fallback to `gemini-1.5-flash` on rate limitations) via secure REST API calls directly from the client.
+*   **Google Gemini API**: Uses `gemini-2.5-flash` through the server-side `/api/gemini` proxy when a Gemini API key is configured on the server.
     *   *Plan Advisor*: Tailors preparedness actions based on family profiling.
     *   *Travel Sentinel*: Computes safety ratings (Green, Yellow, Red) based on route and transit type.
     *   *First Responder Chat*: Interactive safety Q&A chatbot.
 *   **System Instructions Security**: Embedded system prompts prevent the AI from generating DIY medical advice or prescribing medication. It enforces redirects to verified helplines (112, 108) for injuries.
-*   **Dynamic Fallback Logic**: If no Gemini API key is entered, or if the user is offline, the app switches to a localized rule-based engine and pre-compiled templates to keep all features 100% functional.
+*   **Dynamic Fallback Logic**: If no Gemini API key is configured, or if the user is offline, the app switches to a localized rule-based engine and pre-compiled templates to keep all features 100% functional.
 
 ---
 
@@ -59,7 +59,7 @@ graph TD
 ```
 
 *   **Resiliency Design**: Weather forecasts are cached locally in `sessionStorage` for 15 minutes to reduce API overhead.
-*   **Security & Privacy**: No backend database. User inputs, active checklists, and API keys are stored strictly in the user's browser (`localStorage`), removing all database breach vectors.
+*   **Security & Privacy**: No backend database. User inputs and active checklists are stored in the user's browser (`localStorage`). Gemini API keys should be configured as server environment variables.
 
 ---
 
@@ -67,15 +67,19 @@ graph TD
 
 ### Prerequisites
 *   Node.js (v20+ recommended)
-*   A Google Gemini API key (optional but required for live AI features; the app runs in fallback mode if missing).
+*   A Google Gemini API key configured as `GEMINI_API_KEY` (optional but required for live AI features; the app runs in fallback mode if missing). The backend also accepts `GOOGLE_GEMINI_API_KEY`, `GOOGLE_API_KEY`, or `API_KEY`.
 
 ### Installation
 1.  Clone the repository.
-2.  Navigate to the directory and launch the zero-dependency dev server:
+2.  Set a local environment variable or create a `.env` file:
+    ```bash
+    GEMINI_API_KEY=your_google_ai_studio_key
+    ```
+3.  Navigate to the directory and launch the zero-dependency dev server:
     ```bash
     npm run dev
     ```
-3.  Open your browser and navigate to: `http://localhost:3000/`
+4.  Open your browser and navigate to: `http://localhost:3000/`
 
 ### Running Automated Tests
 The application includes a fully automated unit test suite verifying storage adapters, WMO weather translation maps, static plan compilation, and markdown parsing:
@@ -97,7 +101,7 @@ We designed the platform to be fully inclusive for communities during emergencie
 ## 8. Deployment Details
 *   **Live URL**: [Replace with deployment URL, e.g., Vercel / GitHub Pages link]
 *   **Credentials**: No authentication or login is required. All features are open-access. 
-*   *Note: To test live GenAI queries, click the **🔑 API Settings** button in the header and paste your Google Gemini API Key.*
+*   *Note: To test live GenAI queries in production, configure `GEMINI_API_KEY` in the hosting provider's environment variables and redeploy the app.*
 
 ---
 

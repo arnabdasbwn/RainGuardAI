@@ -7,6 +7,53 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const PORT = 3000;
+const GEMINI_API_KEY_ENV_NAMES = [
+  'GEMINI_API_KEY',
+  'GOOGLE_GEMINI_API_KEY',
+  'GOOGLE_API_KEY',
+  'API_KEY'
+];
+
+function loadLocalEnv() {
+  const envPath = path.join(__dirname, '.env');
+  if (!fs.existsSync(envPath)) return;
+
+  const lines = fs.readFileSync(envPath, 'utf8').split(/\r?\n/);
+  for (const line of lines) {
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('#')) continue;
+
+    const separatorIndex = trimmed.indexOf('=');
+    if (separatorIndex === -1) continue;
+
+    const key = trimmed.slice(0, separatorIndex).trim();
+    let value = trimmed.slice(separatorIndex + 1).trim();
+    if (!key || process.env[key]) continue;
+
+    if ((value.startsWith('"') && value.endsWith('"')) || (value.startsWith("'") && value.endsWith("'"))) {
+      value = value.slice(1, -1);
+    }
+
+    process.env[key] = value;
+  }
+}
+
+function getGeminiApiKey() {
+  for (const name of GEMINI_API_KEY_ENV_NAMES) {
+    const value = process.env[name];
+    if (typeof value === 'string' && value.trim()) {
+      return { apiKey: value.trim(), envName: name };
+    }
+  }
+
+  return { apiKey: '', envName: '' };
+}
+
+function isPlaceholderApiKey(apiKey) {
+  return !apiKey || apiKey === 'MOCK_GEMINI_API_KEY_PLACEHOLDER';
+}
+
+loadLocalEnv();
 
 const MIME_TYPES = {
   '.html': 'text/html',
@@ -30,10 +77,12 @@ const server = http.createServer((req, res) => {
       body += chunk;
     });
     req.on('end', async () => {
-      const apiKey = process.env.GEMINI_API_KEY;
-      if (!apiKey || apiKey === 'MOCK_GEMINI_API_KEY_PLACEHOLDER' || apiKey.startsWith('AQ.')) {
+      const { apiKey, envName } = getGeminiApiKey();
+      if (isPlaceholderApiKey(apiKey)) {
         res.writeHead(503, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: 'GEMINI_API_KEY environment variable is not configured locally.' }));
+        res.end(JSON.stringify({
+          error: `Gemini API key is not configured locally. Add one of these environment variables: ${GEMINI_API_KEY_ENV_NAMES.join(', ')}.`
+        }));
         return;
       }
 
@@ -67,7 +116,7 @@ const server = http.createServer((req, res) => {
         }
       } catch (err) {
         res.writeHead(500, { 'Content-Type': 'application/json' });
-        res.end(JSON.stringify({ error: err.message }));
+        res.end(JSON.stringify({ error: err.message, envName }));
       }
     });
     return;

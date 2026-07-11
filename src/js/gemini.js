@@ -89,7 +89,7 @@ export const Gemini = {
 
     // 2. Fallback to client-side direct request (using browser-saved API key)
     const key = Storage.getApiKey();
-    if (!key || key === 'MOCK_GEMINI_API_KEY_PLACEHOLDER' || key.startsWith('AQ.')) {
+    if (!key || key === 'MOCK_GEMINI_API_KEY_PLACEHOLDER') {
       if (proxyErrorText) {
         throw new Error(`Proxy Error: ${proxyErrorText}`);
       }

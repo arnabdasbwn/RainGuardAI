@@ -74,7 +74,7 @@ function parseMarkdown(text) {
   return processedLines.join('\n');
 }
 
-// Check if the user has explicitly entered/saved an API key in localStorage
+// Optional browser key fallback retained for local demos without a server env key.
 function hasRealApiKey() {
   try {
     const saved = localStorage.getItem('rainguard_gemini_api_key');
@@ -847,7 +847,7 @@ async function triggerAiAdvisory(weatherData) {
     timestampEl.innerText = liveLabel[State.lang] || liveLabel['en'];
   } catch (err) {
     console.error('Failed to get dashboard AI advisory', err);
-    container.innerText = 'Failed to fetch AI recommendation. Check network connectivity or your API Key.';
+    container.innerText = 'Failed to fetch AI recommendation. Check network connectivity or the server Gemini API key configuration.';
   }
 }
 
@@ -906,7 +906,7 @@ function initProfiler() {
       
       let warningMessage = '';
       if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
-        warningMessage = `⚠️ ${State.lang === 'en' ? 'API Key not provided. Displaying local dynamic plan based on your profile inputs.' : 'एपीआई कुंजी नहीं मिली। आपके प्रोफाइल के अनुसार स्थानीय योजना प्रदर्शित की जा रही है।'}`;
+        warningMessage = `⚠️ ${State.lang === 'en' ? 'Server Gemini API key is not configured. Displaying local dynamic plan based on your profile inputs.' : 'सर्वर जेमिनी एपीआई कुंजी कॉन्फ़िगर नहीं है। आपके प्रोफाइल के अनुसार स्थानीय योजना प्रदर्शित की जा रही है।'}`;
       } else {
         warningMessage = `❌ ${State.lang === 'en' ? 'GenAI Service error. Switched to local dynamic fallback plan.' : 'जेनेरेटिव एआई सेवा त्रुटि। स्थानीय फॉलबैक सुरक्षा योजना लोड की गई है।'}`;
       }
@@ -1086,8 +1086,8 @@ function initTravelSentinel() {
       let warningMessage = '';
       if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
         warningMessage = State.lang === 'en'
-          ? 'API Key not provided. Evaluating travel risks using local static engine.'
-          : 'एपीआई कुंजी नहीं मिली। स्थानीय विश्लेषण इंजन द्वारा यात्रा सुरक्षा का आकलन किया गया है।';
+          ? 'Server Gemini API key is not configured. Evaluating travel risks using local static engine.'
+          : 'सर्वर जेमिनी एपीआई कुंजी कॉन्फ़िगर नहीं है। स्थानीय विश्लेषण इंजन द्वारा यात्रा सुरक्षा का आकलन किया गया है।';
       } else {
         warningMessage = State.lang === 'en'
           ? 'GenAI service query failed. Displaying local travel safety analysis.'
@@ -1310,8 +1310,8 @@ function initChatbot() {
       let warningMessage = '';
       if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
         warningMessage = State.lang === 'en'
-          ? 'API Key not provided. Switched to offline keyword matcher.'
-          : 'एपीआई कुंजी नहीं मिली। स्थानीय खोज इंजन सक्रिय किया गया है।';
+          ? 'Server Gemini API key is not configured. Switched to offline keyword matcher.'
+          : 'सर्वर जेमिनी एपीआई कुंजी कॉन्फ़िगर नहीं है। स्थानीय खोज इंजन सक्रिय किया गया है।';
       } else {
         warningMessage = State.lang === 'en'
           ? 'GenAI API connection issue. Switched to offline keyword matcher.'

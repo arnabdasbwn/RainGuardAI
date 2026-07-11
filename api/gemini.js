@@ -21,15 +21,39 @@ async function getRequestBody(req) {
   });
 }
 
+const GEMINI_API_KEY_ENV_NAMES = [
+  'GEMINI_API_KEY',
+  'GOOGLE_GEMINI_API_KEY',
+  'GOOGLE_API_KEY',
+  'API_KEY'
+];
+
+function getGeminiApiKey() {
+  for (const name of GEMINI_API_KEY_ENV_NAMES) {
+    const value = process.env[name];
+    if (typeof value === 'string' && value.trim()) {
+      return { apiKey: value.trim(), envName: name };
+    }
+  }
+
+  return { apiKey: '', envName: '' };
+}
+
+function isPlaceholderApiKey(apiKey) {
+  return !apiKey || apiKey === 'MOCK_GEMINI_API_KEY_PLACEHOLDER';
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
     return res.status(405).send('Method Not Allowed');
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey || apiKey === 'MOCK_GEMINI_API_KEY_PLACEHOLDER' || apiKey.startsWith('AQ.')) {
-    return res.status(503).json({ error: 'GEMINI_API_KEY environment variable is not configured on the Vercel server.' });
+  const { apiKey, envName } = getGeminiApiKey();
+  if (isPlaceholderApiKey(apiKey)) {
+    return res.status(503).json({
+      error: `Gemini API key is not configured on the server. Add one of these environment variables: ${GEMINI_API_KEY_ENV_NAMES.join(', ')}.`
+    });
   }
 
   try {
@@ -58,6 +82,6 @@ export default async function handler(req, res) {
       return res.status(500).json({ error: 'Incomplete response received from Gemini.' });
     }
   } catch (err) {
-    return res.status(500).json({ error: err.message });
+    return res.status(500).json({ error: err.message, envName });
   }
 }
