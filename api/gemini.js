@@ -1,3 +1,26 @@
+async function getRequestBody(req) {
+  if (req.body && (typeof req.body === 'object' || (typeof req.body === 'string' && req.body.trim() !== ''))) {
+    return typeof req.body === 'string' ? JSON.parse(req.body) : req.body;
+  }
+
+  return new Promise((resolve, reject) => {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk;
+    });
+    req.on('end', () => {
+      try {
+        resolve(body ? JSON.parse(body) : {});
+      } catch (err) {
+        reject(err);
+      }
+    });
+    req.on('error', err => {
+      reject(err);
+    });
+  });
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     res.setHeader('Allow', 'POST');
@@ -9,10 +32,9 @@ export default async function handler(req, res) {
     return res.status(503).json({ error: 'GEMINI_API_KEY environment variable is not configured on the Vercel server.' });
   }
 
-  const requestBody = req.body;
-  const model = 'gemini-1.5-flash';
-
   try {
+    const requestBody = await getRequestBody(req);
+    const model = 'gemini-2.5-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
     const response = await fetch(url, {
       method: 'POST',

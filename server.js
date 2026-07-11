@@ -39,7 +39,7 @@ const server = http.createServer((req, res) => {
 
       try {
         const parsedBody = JSON.parse(body);
-        const model = 'gemini-1.5-flash';
+        const model = 'gemini-2.5-flash';
         const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
         const response = await fetch(url, {
           method: 'POST',

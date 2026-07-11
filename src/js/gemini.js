@@ -4,9 +4,9 @@
 
 import { Storage } from './storage.js';
 
-// Default model to use; falls back to gemini-1.5-flash if needed
+// Default model to use
 const PRIMARY_MODEL = 'gemini-2.5-flash';
-const FALLBACK_MODEL = 'gemini-1.5-flash';
+const FALLBACK_MODEL = 'gemini-2.5-flash';
 
 const SYSTEM_INSTRUCTIONS = {
   plan: `You are a Senior Emergency Preparedness Advisor specializing in monsoon and flood resilience.
@@ -63,6 +63,7 @@ export const Gemini = {
     };
 
     // 1. Try serverless backend proxy first
+    let proxyErrorText = '';
     try {
       const proxyResponse = await fetch('/api/gemini', {
         method: 'POST',
@@ -74,14 +75,24 @@ export const Gemini = {
       if (proxyResponse.ok) {
         const text = await proxyResponse.text();
         return text;
+      } else {
+        proxyErrorText = await proxyResponse.text();
+        try {
+          const errObj = JSON.parse(proxyErrorText);
+          if (errObj.error) proxyErrorText = errObj.error;
+        } catch (_) {}
       }
     } catch (proxyError) {
-      console.warn('Backend API proxy not available or failed. Falling back to direct browser call...', proxyError);
+      console.warn('Backend API proxy not available or failed.', proxyError);
+      proxyErrorText = proxyError.message;
     }
 
     // 2. Fallback to client-side direct request (using browser-saved API key)
     const key = Storage.getApiKey();
     if (!key || key === 'MOCK_GEMINI_API_KEY_PLACEHOLDER' || key.startsWith('AQ.')) {
+      if (proxyErrorText) {
+        throw new Error(`Proxy Error: ${proxyErrorText}`);
+      }
       throw new Error('API_KEY_MISSING');
     }
 
