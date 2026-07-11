@@ -1,44 +1,70 @@
-# Architecture Design Documentation
+# Architecture Design
 
-This document describes the structure, state management, and resiliency patterns utilized in the **RainGuard AI** monsoon preparedness platform.
+RainGuard AI is a static-first disaster preparedness app with a small secure AI proxy. The design goal is reliability under contest judging and real emergency conditions: fast load, no build step, no package dependency chain, graceful fallback, and clear security boundaries.
 
-## 1. Static Frontend + Secure AI Proxy
-To maximize reliability under disaster scenarios (e.g. power grid and network connectivity issues), the application keeps the core experience as a **single-page static site** while using a small serverless proxy for secure Gemini calls.
-*   No database backend is required.
-*   The Vercel `/api/gemini` function keeps Gemini API keys out of browser JavaScript.
-*   Zero compilation or build step (native ES6 JS modules).
-
-## 2. Component Layout
+## 1. Runtime Shape
 
 ```mermaid
 graph TD
-    UI[Index HTML / CSS] <--> App[app.js Orchestrator]
-    App <--> Storage[storage.js Adapter]
-    App <--> Weather[weather.js API Client]
-    App <--> Gemini[gemini.js REST Client]
-    App <--> StaticData[static-data.js Fail-safe Data]
-    Gemini <--> Proxy[Vercel /api/gemini Function]
-    
-    Storage <--> LocalStorage[(Browser Local Storage)]
-    Weather <--> WeatherAPI[Open-Meteo API - Free/Public]
-    Proxy <--> GeminiAPI[Google Gemini REST API]
+    UI[index.html + styles.css] --> App[src/js/app.js]
+    App --> Weather[src/js/weather.js]
+    App --> GeminiClient[src/js/gemini.js]
+    App --> Storage[src/js/storage.js]
+    App --> StaticData[src/js/static-data.js]
+    GeminiClient --> Proxy[api/gemini.js]
+    Proxy --> GeminiAPI[Google Generative Language API]
+    Weather --> OpenMeteo[Open-Meteo APIs]
+    Storage --> LocalStorage[(localStorage/sessionStorage)]
 ```
 
-*   **app.js**: Initializes views, binds navigation, event listeners, updates the weather dashboard, populates carousels, and delegates AI tasks.
-*   **storage.js**: Manages user profiles, saved emergency checklist states, and theme preferences using the browser's persistent `localStorage`.
-*   **weather.js**: Connects to the public Open-Meteo API to retrieve geocoding (coordinates) and real-time weather parameters. Employs a 15-minute `sessionStorage` caching mechanism to avoid API rate limitations and unnecessary network overhead.
-*   **gemini.js**: Formats instructions and prompts, calls the `/api/gemini` proxy first, and falls back to deterministic local logic if live AI is unavailable.
-*   **api/gemini.js**: Serverless Gemini proxy. Reads `GEMINI_API_KEY` or compatible aliases from server environment variables, calls Google's REST Interactions API, and supports model fallback.
-*   **static-data.js**: Houses emergency contacts, static checklists, pre-compiled safety plans, translations, and guidelines for offline/fallback mode.
+## 2. Module Responsibilities
 
-## 3. Resiliency Fallback System
-If the user is offline, the server key is not configured, or the Gemini API request fails, the orchestrator redirects all AI features (Plan Builder, Travel Sentinel, Chatbot) to the local rule-based engine:
-*   **Personalized Plan Builder**: Uses pre-compiled templates, calculating family water/ration needs and injecting housing rules dynamically based on profile metrics.
-*   **Travel Sentinel**: Uses local precipitation, wind, and status alerts to run safety checks and returns offline instructions for walking, two-wheelers, cars, and trains.
-*   **Safety chatbot**: Employs an offline keyword-matching search indexing health, flooding, and waterproofing rules.
+- `index.html`: Semantic single-page shell, navigation, forms, and accessible controls.
+- `src/css/styles.css`: Responsive styling, text scaling, dark/light/high-contrast themes.
+- `src/js/app.js`: Main orchestrator for views, forms, weather rendering, checklists, Safety Hub, and chat.
+- `src/js/weather.js`: Open-Meteo geocoding/weather integration with session caching and WMO code labels.
+- `src/js/gemini.js`: Client wrapper that formats safety prompts and calls only the server proxy.
+- `src/js/storage.js`: Browser persistence for profile, checklist, and theme state. It does not store provider API keys.
+- `src/js/static-data.js`: Offline checklists, guidelines, translations, fallback planning logic, and emergency contacts.
+- `api/gemini.js`: Vercel serverless Gemini proxy with validation, rate limiting, same-origin checks, and safe error handling.
+- `server.js`: Local static server and local `/api/gemini` implementation mirroring production behavior.
 
-## 4. Security and Validation
-*   Gemini secrets are read only on the serverless runtime.
-*   User-entered city, profile, travel, and chat inputs are trimmed, length-limited, validated, and escaped before display.
-*   Generated Markdown is escaped before lightweight formatting is applied.
-*   No authentication exists, so no demo credentials are required.
+## 3. Resiliency Model
+
+Every AI-assisted workflow has a deterministic fallback:
+
+- Preparedness plan: local compiler computes water quantities and injects household-specific guidance.
+- Travel Sentinel: local risk heuristic uses weather code, precipitation, wind, and transit mode.
+- Chat responder: keyword-based emergency guidance for health, flood, evacuation, and waterproofing topics.
+- Safety Hub: static before/during/after guidance and emergency contacts are always available.
+
+Weather data is cached in `sessionStorage` for short-term reuse. User profile/checklist state is kept in `localStorage`; there is no backend database.
+
+## 4. Security Design
+
+The browser never receives a Gemini key. Live AI requests go through `/api/gemini`.
+
+Proxy controls:
+
+- `POST` only.
+- Same-origin request enforcement.
+- `application/json` enforcement.
+- Body size limit.
+- Prompt/system text normalization and length caps.
+- Temperature and output-token clamping.
+- Per-IP in-memory rate limiting.
+- Server-owned safety instruction appended before Gemini calls.
+- Sanitized error messages that avoid leaking environment names or upstream internals.
+
+Frontend controls:
+
+- User inputs are trimmed, length-limited, and angle-bracket rejected where they can be reflected.
+- AI Markdown is escaped before formatting.
+- Guideline bold formatting is rendered with text nodes, not raw HTML insertion.
+- Security headers are configured in `vercel.json` and mirrored in local dev.
+
+## 5. Submission Quality Notes
+
+- Zero package dependencies reduce supply-chain risk and simplify judging.
+- Native Node tests cover storage persistence, weather metadata, translation regressions, fallback plan compilation, and Markdown escaping.
+- The visible language selector only includes languages with direct UI handling to avoid partial translation scoring penalties.

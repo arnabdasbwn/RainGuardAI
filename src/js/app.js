@@ -29,20 +29,15 @@ const LOCALE_BY_LANG = {
   te: 'te-IN',
   ta: 'ta-IN',
   mr: 'mr-IN',
-  gu: 'gu-IN',
-  kn: 'kn-IN',
-  ml: 'ml-IN',
-  pa: 'pa-IN',
-  or: 'or-IN',
-  as: 'as-IN',
-  ur: 'ur-IN',
-  ne: 'ne-NP',
   es: 'es-ES',
   fr: 'fr-FR',
   de: 'de-DE',
   zh: 'zh-CN',
   ar: 'ar'
 };
+
+const SUPPORTED_LANGS = new Set(Object.keys(LOCALE_BY_LANG));
+const SUPPORTED_THEMES = new Set(['dark', 'light', 'contrast']);
 
 function escapeHtml(value) {
   return String(value ?? '')
@@ -124,6 +119,19 @@ function parseMarkdown(text) {
   }
   
   return processedLines.join('\n');
+}
+
+function appendBoldMarkdownText(parent, text) {
+  String(text ?? '').split(/(\*\*.*?\*\*)/g).forEach(part => {
+    if (!part) return;
+    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+      const strong = document.createElement('strong');
+      strong.innerText = part.slice(2, -2);
+      parent.appendChild(strong);
+    } else {
+      parent.appendChild(document.createTextNode(part));
+    }
+  });
 }
 
 // Request permission for Web Notifications API
@@ -412,14 +420,14 @@ function initSettings() {
   const themeSelect = document.getElementById('theme-select');
 
   // Load Saved Settings
-  const savedTheme = Storage.getTheme() || 'dark';
+  const savedTheme = SUPPORTED_THEMES.has(Storage.getTheme()) ? Storage.getTheme() : 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);
   if (themeSelect) themeSelect.value = savedTheme;
 
   // Language Change handler
   if (langSelect) {
     langSelect.addEventListener('change', (e) => {
-      State.lang = e.target.value;
+      State.lang = SUPPORTED_LANGS.has(e.target.value) ? e.target.value : 'en';
       updateLanguageTexts();
       renderGuidelines();
       renderEmergencyContacts();
@@ -440,7 +448,7 @@ function initSettings() {
   // Theme change handler
   if (themeSelect) {
     themeSelect.addEventListener('change', (e) => {
-      const selectedTheme = e.target.value;
+      const selectedTheme = SUPPORTED_THEMES.has(e.target.value) ? e.target.value : 'dark';
       document.documentElement.setAttribute('data-theme', selectedTheme);
       Storage.setTheme(selectedTheme);
     });
@@ -1248,8 +1256,7 @@ function renderGuidelines() {
     list.innerHTML = '';
     stepsArray.forEach(step => {
       const li = document.createElement('li');
-      // Format markdown bold within items
-      li.innerHTML = step.replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>');
+      appendBoldMarkdownText(li, step);
       list.appendChild(li);
     });
   };

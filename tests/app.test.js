@@ -66,20 +66,6 @@ function testParseMarkdown(text) {
   return processedLines.join('\n');
 }
 
-// ---------------------------------------------------------
-// TEST GROUP: Storage Operations
-// ---------------------------------------------------------
-test('Storage Controller - Save and retrieve API Key', () => {
-  localStorage.clear();
-  assert.strictEqual(Storage.getApiKey(), 'MOCK_GEMINI_API_KEY_PLACEHOLDER');
-  
-  Storage.setApiKey('test-api-key');
-  assert.strictEqual(Storage.getApiKey(), 'test-api-key');
-  
-  Storage.setApiKey(null);
-  assert.strictEqual(Storage.getApiKey(), 'MOCK_GEMINI_API_KEY_PLACEHOLDER');
-});
-
 test('Storage Controller - User Profile Persistence', () => {
   localStorage.clear();
   const sampleProfile = {

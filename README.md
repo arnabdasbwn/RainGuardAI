@@ -1,159 +1,169 @@
-# RainGuard AI - Monsoon Preparedness & Disaster Response Platform
+# RainGuard AI
 
-> **A GenAI-powered, highly accessible, resilient client-side web application designed to safeguard families and communities before, during, and after monsoon disasters.**
+> GenAI-powered monsoon preparedness, weather-aware travel safety, and emergency response guidance for families and communities.
 
-> Development note: RainGuard AI is a vibe-coded, AI-assisted application built with GPT-5-class Codex assistance and Google Gemini Flash 3.5 integration.
+Development note: RainGuard AI is a vibe-coded, AI-assisted competition app built with GPT-5.5-class coding support and a Gemini Flash 3.5 integration path through a secure server proxy.
 
----
+## Submission Summary
 
-## 1. Project Overview
-Monsoon seasons introduce heavy rain, flooding, waterborne pathogens, and infrastructure disruptions. While standard weather tools provide raw numbers (e.g., "75mm precipitation"), they lack localized, contextual safety guidelines. 
+RainGuard AI turns raw weather data into safety actions:
 
-**RainGuard AI** translates real-time meteorological forecasts into highly personalized, actionable safety plans, emergency kit checkers, travel safety sentinel ratings, and a disaster response Q&A chatbot.
+- Live weather risk dashboard using Open-Meteo.
+- Personalized household preparedness plans.
+- Emergency kit checklist with local persistence.
+- Travel Sentinel for route and transit-mode risk.
+- Safety Hub with before/during/after guidance and country-aware emergency contacts.
+- AI Safety Responder with deterministic offline fallback.
+- Accessible language, text-size, dark, light, and high-contrast controls.
 
----
+The app is intentionally lightweight: semantic HTML, native ES modules, pure CSS, no build step, and no runtime package dependencies.
 
-## 2. Challenge Alignment
-This platform aligns directly with the monsoon preparedness challenge by integrating the following pillars:
-1.  **Personalized Preparedness Plans**: Custom plans dynamically constructed based on family size, housing flood-vulnerability, and household markers.
-2.  **Weather-Aware Guidance**: Continuous integration with the Open-Meteo API to extract current hazards.
-3.  **Emergency Checklists**: Locally persistent checklist manager that auto-injects specialized items based on family profiles (infants, elderly, pets, chronic illness).
-4.  **Travel Advisories**: Route hazard sentinel evaluating transit modes (walking, two-wheeler, car, train) against local rainfall risks.
-5.  **Before, During, and After Guidance**: Easy-to-read safety manuals for all storm phases, coupled with verified national disaster helpline contacts.
-6.  **Multilingual Assistance**: Responsive UI and GenAI safety advisor covering major Indian languages, German, Chinese, Spanish, French, Arabic, and English.
-7.  **Real-Time Alerts**: Dynamic hazard warning banners that respond to active storm classifications.
+## Supported Languages
 
----
+The visible selector is limited to languages with direct UI handling:
 
-## 3. Feature Set
-*   **Monsoon Dashboard**: Live Open-Meteo weather, risk badge, localized AI advisory, nearby sector cards, and weather bulletin carousel.
-*   **Resilience Profiler**: Validated household inputs generate personalized preparedness plans through Gemini, with deterministic fallback plans when AI is unavailable.
-*   **Emergency Kit Manager**: Persistent checklist with progress tracking and specialized items for infants, elderly members, and pets.
-*   **Travel Sentinel**: Route and transit-mode risk advisory based on current weather, Gemini reasoning, and local fallback heuristics.
-*   **Safety Hub**: Before/during/after monsoon guidance plus national and city-aware emergency contacts.
-*   **AI Safety Responder**: Multilingual responder for flood, health, waterproofing, and preparedness questions with medical safety guardrails.
-*   **International Emergency Contacts**: Contacts adapt to the detected country for India, US, UK, Germany, China, EU/common 112 countries, and other common travel destinations.
-*   **Accessibility Controls**: Language selector, text-size selector, light/dark/high-contrast themes, keyboard navigation, and ARIA live regions.
+- English
+- Hindi
+- Bengali
+- Telugu
+- Tamil
+- Marathi
+- Spanish
+- French
+- German
+- Simplified Chinese
+- Arabic
 
----
+Other fallback-only language aliases were removed from the UI to avoid partial or inconsistent translations during judging.
 
-## 4. Tech Stack
-We prioritized **extreme deployment reliability, loading speed, and offline resilience** to maximize hackathon evaluation criteria:
-*   **Frontend**: Semantic HTML5, native ES6 JavaScript Modules (zero compile step, zero dependencies).
-*   **Backend**: Vercel serverless function at `/api/gemini` for secure Gemini API calls.
-*   **Styling**: Pure CSS3 utilizing custom properties (variables) for fluid layouts, mobile grids, and responsive transitions.
-*   **Themes**: Native toggles for **Dark Mode (Default)**, **Light Mode**, and **High Contrast Mode** (for visually impaired accessibility).
-*   **Typography**: Accessible fonts (Outfit via Google Fonts) for readability.
-*   **Testing**: Native Node.js Test Runner (`node --test`) for fast, offline-friendly unit tests.
+## Security Posture
 
----
+RainGuard AI uses a server-side `/api/gemini` proxy so Gemini keys never live in browser JavaScript or `localStorage`.
 
-## 5. AI Services Used
-*   **Google Gemini API**: Uses Gemini Flash 3.5 (`gemini-3.5-flash`) through the server-side `/api/gemini` proxy when a Gemini API key is configured on the server, with model fallback support.
-    *   *Plan Advisor*: Tailors preparedness actions based on family profiling.
-    *   *Travel Sentinel*: Computes safety ratings (Green, Yellow, Red) based on route and transit type.
-    *   *First Responder Chat*: Interactive safety Q&A chatbot.
-*   **System Instructions Security**: Embedded system prompts prevent the AI from generating DIY medical advice or prescribing medication. It enforces redirects to verified helplines (112, 108) for injuries.
-*   **Dynamic Fallback Logic**: If no Gemini API key is configured, or if the user is offline, the app switches to a localized rule-based engine and pre-compiled templates to keep all features 100% functional.
+Implemented protections:
 
----
+- Same-origin enforcement on `/api/gemini`.
+- Per-IP in-memory rate limiting.
+- JSON content-type enforcement.
+- Request body size limit.
+- Prompt/system text length limits.
+- Generation config clamping.
+- Server-owned safety instruction appended before Gemini calls.
+- Escaped Markdown rendering for AI output.
+- Safe DOM rendering for guideline content.
+- CSP, `nosniff`, referrer policy, frame protection, and permissions policy headers.
+- `.env` files ignored by Git.
 
-## 6. Architectural Diagram
+No authentication is required and no backend database is used. User profiles, checklist state, and theme preference stay in the user's browser.
+
+## AI and Fallback Behavior
+
+Live AI features call:
+
+```text
+Browser -> /api/gemini -> Google Generative Language API
+```
+
+If the API key is missing, the network is offline, Gemini is unavailable, or the proxy rejects the request, the app falls back to local deterministic guidance:
+
+- Preparedness plan compiler.
+- Travel risk heuristics.
+- Keyword-based emergency responder.
+- Static safety guidelines and contacts.
+
+This keeps the core experience usable during network or API failures.
+
+## Architecture
 
 ```mermaid
 graph TD
-    UI[Index HTML / CSS] <--> App[app.js Orchestrator]
-    App <--> Storage[storage.js Controller]
-    App <--> Weather[weather.js Open-Meteo Client]
-    App <--> Gemini[gemini.js API Client]
-    App <--> StaticData[static-data.js Fail-safe Data]
-    Gemini <--> Proxy[Vercel /api/gemini Function]
-    
-    Storage <--> LocalStorage[(Browser Local Storage)]
-    Weather <--> WeatherAPI[Open-Meteo API - No Key]
-    Proxy <--> GeminiAPI[Google Gemini REST API]
+    UI[index.html + styles.css] --> App[src/js/app.js]
+    App --> Weather[src/js/weather.js]
+    App --> GeminiClient[src/js/gemini.js]
+    App --> Storage[src/js/storage.js]
+    App --> StaticData[src/js/static-data.js]
+    GeminiClient --> Proxy[api/gemini.js]
+    Proxy --> GeminiAPI[Google Generative Language API]
+    Weather --> OpenMeteo[Open-Meteo APIs]
+    Storage --> LocalStorage[(localStorage/sessionStorage)]
 ```
 
-*   **Resiliency Design**: Weather forecasts are cached locally in `sessionStorage` for 15 minutes to reduce API overhead.
-*   **Security & Privacy**: No backend database. User inputs and active checklists are stored in the user's browser (`localStorage`). Gemini API keys should be configured as server environment variables.
-*   **Input Handling**: User-entered city, profile, route, and chat inputs are trimmed, length-limited, validated, and escaped before being displayed in HTML.
-*   **Country-Aware Contacts**: Weather geocoding returns a country name; the Safety Hub uses that country to display local emergency numbers when available.
+## Local Setup
 
----
+Prerequisites:
 
-## 7. Local Setup & Verification
+- Node.js 20+ recommended.
+- Optional Gemini key for live AI output.
 
-### Prerequisites
-*   Node.js (v20+ recommended)
-*   A Google Gemini API key configured as `GEMINI_API_KEY` (optional but required for live AI features; the app runs in fallback mode if missing). The backend also accepts `GOOGLE_GEMINI_API_KEY`, `GOOGLE_API_KEY`, or `API_KEY`.
+Create `.env` for local live-AI testing:
 
-### Installation
-1.  Clone the repository.
-2.  Set a local environment variable or create a `.env` file:
-    ```bash
-    GEMINI_API_KEY=your_google_ai_studio_key
-    ```
-3.  Navigate to the directory and launch the zero-dependency dev server:
-    ```bash
-    npm run dev
-    ```
-4.  Open your browser and navigate to: `http://localhost:3000/`
+```bash
+GEMINI_API_KEY=your_google_ai_studio_key
+```
 
-### Running Automated Tests
-The application includes a fully automated unit test suite verifying storage adapters, WMO weather translation maps, static plan compilation, and markdown parsing:
+Run locally:
+
+```bash
+npm run dev
+```
+
+Open:
+
+```text
+http://localhost:3000/
+```
+
+Run tests:
+
 ```bash
 npm test
 ```
 
----
+Useful pre-submission checks:
 
-## 8. Accessibility Compliance (WCAG 2.1 AA)
-We designed the platform to be fully inclusive for communities during emergencies:
-*   **Screen-Reader Optimized**: Outlined with semantic tags (`<header>`, `<nav>`, `<main>`, `<section>`, `<footer>`) and `aria-label`/`aria-live` elements for announcements.
-*   **Contrast Theme**: High Contrast Mode swaps all colors to stark black, white, and high-intensity yellow.
-*   **Keyboard Navigation**: Tab indexes and clear, high-visibility focus borders (`outline: 3px solid var(--accent)`) ensure full navigation without a mouse.
-*   **Flexible Text Scaling**: Resizing options allow text scaling up to 150% without breaking fluid layouts.
+```bash
+node --check api/gemini.js
+node --check server.js
+node --check src/js/app.js
+node --check src/js/gemini.js
+node --check src/js/storage.js
+node -e "JSON.parse(require('fs').readFileSync('vercel.json','utf8')); console.log('vercel.json ok')"
+git diff --check
+```
 
----
+Dependency audit note: this project currently has no package dependencies and no lockfile. `npm audit` requires a lockfile, so dependency risk is minimized by the zero-dependency architecture rather than audited through npm.
 
-## 9. Deployment Details
-*   **Live URL**: https://rain-guard-ai-self.vercel.app/
-*   **Repository**: https://github.com/arnabdasbwn/RainGuardAI
-*   **Credentials**: No authentication or login is required. All features are open-access. 
-*   *Note: To test live GenAI queries in production, configure `GEMINI_API_KEY` in the hosting provider's environment variables and redeploy the app.*
+## Deployment
 
----
+- Live URL: https://rain-guard-ai-self.vercel.app/
+- Repository: https://github.com/arnabdasbwn/RainGuardAI
+- Vercel route: `/api/gemini`
 
-## 10. Competition Verification Checklist
-Run this before the final PromptWars submission:
+Production live-AI setup:
 
-*   Open the live URL in an incognito browser.
-*   Confirm dashboard loads weather for Mumbai and another searched city.
-*   Confirm Auto-Detect Location handles both allow and deny permission paths.
-*   Generate a preparedness plan with infants, elderly, pets, and chronic illness selected.
-*   Reset and tick emergency kit items; confirm progress updates.
-*   Evaluate a Travel Sentinel route for walking, two-wheeler, car, and public transit.
-*   Open all Safety Hub tabs and tap emergency phone links.
-*   Ask the AI Responder a flood question and a health question.
-*   Toggle language, text size, light theme, dark theme, and high contrast theme.
-*   Test on a mobile viewport and confirm no horizontal page breakage.
-*   Confirm `/api/gemini` returns a live Gemini answer when `GEMINI_API_KEY` is configured.
-*   Confirm fallback messages are shown gracefully if Gemini is unavailable.
+1. Add `GEMINI_API_KEY` in Vercel project environment variables.
+2. Redeploy the app.
+3. Confirm `/api/gemini` returns live text for valid same-origin JSON requests.
 
----
+Compatible environment aliases are supported for hosting flexibility: `GOOGLE_GEMINI_API_KEY`, `GOOGLE_API_KEY`, and `API_KEY`.
 
-## 11. Screenshots To Capture For Submission
-Use the deployed application to capture:
+## Competition Verification Checklist
 
-*   Dashboard with live weather and AI advisory.
-*   Generated preparedness plan.
-*   Travel Sentinel result.
-*   Safety Hub emergency contacts.
-*   Mobile dashboard view.
+- Dashboard loads Mumbai weather and another searched city.
+- Auto-detect location handles allow and deny flows.
+- Preparedness plan works with infants, elderly, pets, and chronic illness selected.
+- Checklist reset and progress updates work.
+- Travel Sentinel works for walking, two-wheeler, car, and public transit.
+- Safety Hub tabs render and emergency `tel:` links work.
+- International contacts change when the detected weather country changes.
+- AI Responder handles flood and health questions.
+- Gemini fallback messages are graceful when the key is absent.
+- Language selector updates visible UI immediately.
+- Text-size and theme selectors work.
+- Mobile viewport has no horizontal overflow.
 
----
+## Known Limitations
 
-## 12. Known Limitations & Edge Cases
-*   **Offline Mode**: When the user loses internet connection, the system detects offline status instantly, displays a warning banner, and falls back to static emergency checklists and rule-based travel advisories.
-*   **Geocoding Fallback**: If Open-Meteo's geocoding fails to resolve a typed location, the weather card defaults to Mumbai and guides the user to adjust the spelling.
-*   **Gemini Availability**: If a configured Gemini model is unavailable or rate-limited, the proxy tries configured fallbacks and the UI falls back to deterministic local guidance.
+- In-memory rate limiting is suitable for this lightweight submission but should move to a shared store such as Upstash or Vercel KV for high-volume multi-instance production.
+- Offline mode cannot fetch new weather data, but cached/static safety flows remain usable.
+- Live AI quality depends on the configured Gemini model availability and quota.

@@ -1,33 +1,68 @@
-# Gemini API Setup & Configuration
+# Gemini API Setup
 
-This document explains how to configure and use the Google Gemini API in **RainGuard AI**.
+RainGuard AI uses Gemini only through the server-side `/api/gemini` proxy. Do not place Gemini API keys in browser code, query strings, localStorage, or committed files.
 
-## 1. Setup Instructions
-To enable live generative safety recommendations, configure a Google AI Studio API key on the server:
+## 1. Configure Live AI
 
-1.  Navigate to [Google AI Studio](https://aistudio.google.com/).
-2.  Log in with your Google account and click **Create API Key**.
-3.  Copy the generated key.
-4.  Add the key to your hosting provider as `GEMINI_API_KEY`.
-5.  Redeploy or restart the server so the runtime can read the new environment variable.
-
-The backend also accepts `GOOGLE_GEMINI_API_KEY`, `GOOGLE_API_KEY`, or `API_KEY` for compatibility with different host dashboards.
-
-For local development, either set the shell variable before running the server or create a `.env` file in the project root:
+1. Open Google AI Studio.
+2. Create a Gemini API key.
+3. Add the key to the hosting environment as:
 
 ```bash
 GEMINI_API_KEY=your_google_ai_studio_key
 ```
 
-## 2. API Key Security & Privacy
-RainGuard AI calls Gemini through the server-side `/api/gemini` proxy:
+4. Redeploy or restart the server.
 
-*   Your production API key stays in server environment variables.
-*   The key is never exposed in browser JavaScript.
-*   Requests are forwarded by the backend to the official Google Generative Language REST endpoint (`https://generativelanguage.googleapis.com/v1beta/interactions`).
+Compatibility aliases are also accepted by the backend: `GOOGLE_GEMINI_API_KEY`, `GOOGLE_API_KEY`, and `API_KEY`.
 
-## 3. Fallback Mechanism
-If no key is configured, or if the Gemini API request fails:
+For local development, create a root `.env` file or set the shell variable before running:
 
-*   The app runs in **local offline fallback mode** using pre-configured static resources and rule-based evaluation logic.
-*   All features (dashboard advisories, travel assessments, chatbot responder, and plan creation) remain functional without exposing network errors to users.
+```bash
+npm run dev
+```
+
+`.env` and `.env*.local` are ignored by Git.
+
+## 2. Proxy Contract
+
+Endpoint:
+
+```text
+POST /api/gemini
+Content-Type: application/json
+```
+
+The frontend sends Gemini-compatible `systemInstruction`, `contents`, and `generationConfig` fields. The proxy normalizes and validates the request before forwarding it to Google.
+
+Proxy protections:
+
+- Same-origin enforcement.
+- JSON content-type requirement.
+- 12 KB request body cap.
+- Prompt and system-instruction length caps.
+- Generation config clamping.
+- In-memory per-IP rate limiting.
+- Server-owned safety instruction.
+- Sanitized errors.
+
+## 3. Fallback Behavior
+
+If the proxy is not configured or Gemini fails, the UI does not expose raw stack traces. It switches to local fallback logic:
+
+- Dynamic preparedness plan compiler.
+- Travel risk heuristic.
+- Offline emergency responder.
+- Static Safety Hub guidance.
+
+This is expected behavior for demos where `GEMINI_API_KEY` is intentionally absent.
+
+## 4. Manual Smoke Test
+
+After setting the key and redeploying, verify from the app UI:
+
+- Generate a preparedness plan.
+- Ask the AI Responder a flood-safety question.
+- Evaluate a Travel Sentinel route.
+
+All three should produce live AI output. Remove or rename the key and redeploy to confirm fallback mode still works.

@@ -1,22 +1,59 @@
-# Special Features: Bulletins, Notifications & Municipal Contacts
+# Feature Notes
 
-This document details the specifications and behavior of the advanced real-time warning features integrated into **RainGuard AI**.
+This document lists the user-facing features and the implementation details most relevant for competition review.
 
-## 1. Web Push Notifications
-To provide immediate warnings for severe hazards, RainGuard AI uses the native **Web Notifications API**:
-*   **Trigger**: A push notification is sent immediately when weather data updates and has an active **High Danger (alert)** weather code level (such as heavy rain, torrential showers, or thunderstorms).
-*   **Cross-Platform**: Works on both desktop browsers (Chrome, Firefox, Safari, Edge) and mobile environments (Android Chrome using Service Worker fallback `registration.showNotification`).
-*   **Permissions**: Prompts the user for notification permissions on initial startup and when submitting the location search form.
+## 1. Dashboard
 
-## 2. Local Weather News Carousel
-The dashboard features an interactive **Local Weather Bulletin** card displaying real-time updates for the active location:
-*   **Dynamic Generation**: Headline topics and details are synthesized in real-time from active weather parameters (heavy precipitation triggers local waterlogging updates, wind speeds trigger high wind gusts warning, etc.).
-*   **Controls**: Includes visual prev/next buttons and dots to navigate between slides.
-*   **Carousel Animation**: Utilizes CSS transitions for fluid transitions between news items.
-*   **Auto-Scroll**: Slides automatically advance every 5 seconds.
+- Live Open-Meteo weather for the active city.
+- Weather risk badge derived from WMO weather codes.
+- Local weather bulletin carousel generated from precipitation, wind, and alert severity.
+- Nearby-sector weather cards with primary/destination quick actions.
+- Country-aware contact refresh when the detected location changes.
 
-## 3. Dynamic Municipal Contacts
-The contacts section under Safety Hub dynamically updates based on the active weather location:
-*   **Local Authorities**: Prepends specific municipal control rooms and disaster management cell cards (e.g. BMC for Mumbai, PMC for Pune, BBMP for Bengaluru, MCD for Delhi) at the top of the contacts list.
-*   **Fallback**: Generates local control room cards for other search inputs.
-*   **Updates**: Refreshes immediately when changing locations or switching between languages.
+## 2. Preparedness Profiler
+
+- Validates name, city, family size, vulnerabilities, and optional notes.
+- Gemini plan generation when `/api/gemini` is configured.
+- Local deterministic fallback that still computes household quantities and vulnerability-specific guidance.
+- Stores only the profile in browser localStorage; no server database is required.
+
+## 3. Emergency Kit Manager
+
+- Builds a checklist from the saved profile.
+- Adds specialized items for infants, elderly members, and pets.
+- Persists checklist state locally.
+- Includes reset and progress tracking.
+
+## 4. Travel Sentinel
+
+- Accepts origin, destination, and mode of travel.
+- Supports walking, two-wheeler, car/taxi, and public transit.
+- Uses Gemini for contextual route advice when available.
+- Falls back to local weather and transit-mode heuristics when AI is unavailable.
+
+## 5. Safety Hub
+
+- Before, during, and after safety guidance.
+- Emergency contacts for India and supported international destinations.
+- Contact cards use safe DOM text insertion and `tel:` links.
+- Guidance list rendering avoids raw HTML injection.
+
+## 6. AI Safety Responder
+
+- Answers preparedness, flood, health, and waterproofing questions.
+- System prompts instruct the model not to prescribe medication or give unsafe medical guidance.
+- Server proxy appends a second safety policy for direct endpoint calls.
+- User text and chat history are treated as untrusted content.
+
+## 7. Accessibility and Internationalization
+
+- Language selector includes directly handled languages only.
+- Text-size selector supports normal, large, and extra-large modes.
+- Themes include dark, light, and high contrast.
+- Semantic sections, ARIA labels, live regions, and keyboard-focused navigation are used throughout.
+
+## 8. Notifications
+
+- Browser notification permission is requested only through user-triggered flows.
+- High-danger weather states can trigger local notifications.
+- The app remains functional when notification permission is denied.

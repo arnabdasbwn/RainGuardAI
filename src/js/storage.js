@@ -3,43 +3,12 @@
  */
 
 const STORAGE_KEYS = {
-  API_KEY: 'rainguard_gemini_api_key',
   USER_PROFILE: 'rainguard_user_profile',
   CHECKLIST_STATE: 'rainguard_checklist_state',
   THEME_PREFERENCE: 'rainguard_theme_preference'
 };
 
 export const Storage = {
-  /**
-   * Get the saved Gemini API Key
-   * @returns {string|null}
-   */
-  getApiKey() {
-    try {
-      const savedKey = localStorage.getItem(STORAGE_KEYS.API_KEY);
-      return savedKey || 'MOCK_GEMINI_API_KEY_PLACEHOLDER';
-    } catch (e) {
-      console.error('Failed to read API Key from storage', e);
-      return 'MOCK_GEMINI_API_KEY_PLACEHOLDER';
-    }
-  },
-
-  /**
-   * Save the Gemini API Key
-   * @param {string} key 
-   */
-  setApiKey(key) {
-    try {
-      if (key) {
-        localStorage.setItem(STORAGE_KEYS.API_KEY, key.trim());
-      } else {
-        localStorage.removeItem(STORAGE_KEYS.API_KEY);
-      }
-    } catch (e) {
-      console.error('Failed to write API Key to storage', e);
-    }
-  },
-
   /**
    * Get the saved User Profile
    * @returns {Object|null}

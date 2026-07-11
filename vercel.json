@@ -9,5 +9,16 @@
     { "src": "/api/gemini", "dest": "/api/gemini.js" },
     { "src": "/src/(.*)", "dest": "/src/$1" },
     { "src": "/(.*)", "dest": "/index.html" }
+  ],
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com; connect-src 'self' https://geocoding-api.open-meteo.com https://api.open-meteo.com https://api.bigdatacloud.net; img-src 'self' data:; object-src 'none'; base-uri 'self'; frame-ancestors 'none'" },
+        { "key": "X-Content-Type-Options", "value": "nosniff" },
+        { "key": "Referrer-Policy", "value": "no-referrer" },
+        { "key": "Permissions-Policy", "value": "geolocation=(self), camera=(), microphone=()" }
+      ]
+    }
   ]
 }
