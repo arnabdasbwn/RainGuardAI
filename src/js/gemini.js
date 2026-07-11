@@ -44,11 +44,6 @@ export const Gemini = {
    * @returns {Promise<string>}
    */
   async generateContent(systemInstruction, prompt, lang = 'en') {
-    const key = Storage.getApiKey();
-    if (!key || key === 'MOCK_GEMINI_API_KEY_PLACEHOLDER' || key.startsWith('AQ.')) {
-      throw new Error('API_KEY_MISSING');
-    }
-
     const languageInstruction = ` Respond strictly in ${lang === 'hi' ? 'Hindi (हिंदी)' : 'English'}.`;
     const fullSystem = systemInstruction + languageInstruction;
 
@@ -67,13 +62,35 @@ export const Gemini = {
       }
     };
 
-    // Try primary model first, fallback on error
+    // 1. Try serverless backend proxy first
+    try {
+      const proxyResponse = await fetch('/api/gemini', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(requestBody)
+      });
+      if (proxyResponse.ok) {
+        const text = await proxyResponse.text();
+        return text;
+      }
+    } catch (proxyError) {
+      console.warn('Backend API proxy not available or failed. Falling back to direct browser call...', proxyError);
+    }
+
+    // 2. Fallback to client-side direct request (using browser-saved API key)
+    const key = Storage.getApiKey();
+    if (!key || key === 'MOCK_GEMINI_API_KEY_PLACEHOLDER' || key.startsWith('AQ.')) {
+      throw new Error('API_KEY_MISSING');
+    }
+
     try {
       return await this._executeRequest(PRIMARY_MODEL, key, requestBody);
     } catch (e) {
       console.warn(`Primary model ${PRIMARY_MODEL} failed, trying fallback ${FALLBACK_MODEL}`, e);
       if (e.message === 'API_KEY_MISSING' || e.message === 'UNAUTHORIZED') {
-        throw e; // Do not try fallback if auth failed
+        throw e;
       }
       return await this._executeRequest(FALLBACK_MODEL, key, requestBody);
     }

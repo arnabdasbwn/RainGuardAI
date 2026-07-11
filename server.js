@@ -23,6 +23,56 @@ const MIME_TYPES = {
 const server = http.createServer((req, res) => {
   console.log(`${req.method} ${req.url}`);
   
+  // Handle local proxy endpoint for Gemini API
+  if (req.url.startsWith('/api/gemini') && req.method === 'POST') {
+    let body = '';
+    req.on('data', chunk => {
+      body += chunk;
+    });
+    req.on('end', async () => {
+      const apiKey = process.env.GEMINI_API_KEY;
+      if (!apiKey || apiKey === 'MOCK_GEMINI_API_KEY_PLACEHOLDER' || apiKey.startsWith('AQ.')) {
+        res.writeHead(503, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: 'GEMINI_API_KEY environment variable is not configured locally.' }));
+        return;
+      }
+
+      try {
+        const parsedBody = JSON.parse(body);
+        const model = 'gemini-1.5-flash';
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(parsedBody)
+        });
+
+        if (!response.ok) {
+          const errorText = await response.text();
+          res.writeHead(response.status, { 'Content-Type': 'text/plain' });
+          res.end(errorText);
+          return;
+        }
+
+        const data = await response.json();
+        if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
+          const text = data.candidates[0].content.parts[0].text;
+          res.writeHead(200, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end(text);
+        } else {
+          res.writeHead(500, { 'Content-Type': 'application/json' });
+          res.end(JSON.stringify({ error: 'Incomplete response received from Gemini.' }));
+        }
+      } catch (err) {
+        res.writeHead(500, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ error: err.message }));
+      }
+    });
+    return;
+  }
+  
   // Normalize URL path
   let filePath = path.join(__dirname, req.url === '/' ? 'index.html' : req.url);
   
