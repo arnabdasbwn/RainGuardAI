@@ -26,6 +26,49 @@ const WEATHER_CODES = {
   99: { label: { en: 'Thunderstorm with heavy hail', hi: 'भारी ओलों के साथ आंधी' }, alert: 'alert', icon: '🚨' }
 };
 
+const WEATHER_LABEL_OVERRIDES = {
+  de: {
+    0: 'Klarer Himmel',
+    1: 'Überwiegend klar',
+    2: 'Teilweise bewölkt',
+    3: 'Bedeckt',
+    45: 'Nebel',
+    48: 'Raureifnebel',
+    51: 'Leichter Nieselregen',
+    53: 'Mäßiger Nieselregen',
+    55: 'Starker Nieselregen',
+    61: 'Leichter Regen',
+    63: 'Mäßiger Regen',
+    65: 'Starker Regen',
+    80: 'Leichte Regenschauer',
+    81: 'Mäßige Regenschauer',
+    82: 'Heftige Regenschauer',
+    95: 'Gewitter',
+    96: 'Gewitter mit leichtem Hagel',
+    99: 'Gewitter mit starkem Hagel'
+  },
+  zh: {
+    0: '晴朗',
+    1: '大致晴朗',
+    2: '局部多云',
+    3: '阴天',
+    45: '雾',
+    48: '雾凇',
+    51: '小毛毛雨',
+    53: '中等毛毛雨',
+    55: '强毛毛雨',
+    61: '小雨',
+    63: '中雨',
+    65: '大雨',
+    80: '小阵雨',
+    81: '中等阵雨',
+    82: '强阵雨',
+    95: '雷暴',
+    96: '雷暴伴轻微冰雹',
+    99: '雷暴伴强冰雹'
+  }
+};
+
 export const Weather = {
   /**
    * Translates WMO weather code to descriptive label, icon, and alert level
@@ -35,7 +78,7 @@ export const Weather = {
   getWeatherMeta(code, lang = 'en') {
     const meta = WEATHER_CODES[code] || { label: { en: 'Unknown conditions', hi: 'अज्ञात मौसम' }, alert: 'caution', icon: '❓' };
     return {
-      text: meta.label[lang] || meta.label.en,
+      text: WEATHER_LABEL_OVERRIDES[lang]?.[code] || meta.label[lang] || meta.label.en,
       alert: meta.alert,
       icon: meta.icon
     };

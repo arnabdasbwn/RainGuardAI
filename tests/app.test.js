@@ -21,7 +21,7 @@ globalThis.sessionStorage = {
 // Import code units to test
 import { Storage } from '../src/js/storage.js';
 import { Weather } from '../src/js/weather.js';
-import { compileFallbackPreparednessPlan } from '../src/js/static-data.js';
+import { compileFallbackPreparednessPlan, DISASTER_GUIDELINES, TRANSLATIONS } from '../src/js/static-data.js';
 
 // Markdown parser local extraction to test formatting logic
 function testParseMarkdown(text) {
@@ -113,6 +113,22 @@ test('Weather Controller - Translate WMO weather codes', () => {
   // Hindi Translation
   const hiStorm = Weather.getWeatherMeta(95, 'hi');
   assert.strictEqual(hiStorm.text, 'गरज के साथ तूफान');
+
+  const deStorm = Weather.getWeatherMeta(95, 'de');
+  assert.strictEqual(deStorm.text, 'Gewitter');
+
+  const zhRain = Weather.getWeatherMeta(65, 'zh');
+  assert.strictEqual(zhRain.text, '大雨');
+});
+
+test('Static Data - German and Chinese translations do not fall back to English', () => {
+  assert.strictEqual(TRANSLATIONS.de.title_dashboard, 'Monsun-Dashboard');
+  assert.strictEqual(TRANSLATIONS.zh.title_dashboard, '季风安全仪表盘');
+  assert.notStrictEqual(TRANSLATIONS.de.default_chat_welcome, TRANSLATIONS.en.default_chat_welcome);
+  assert.notStrictEqual(TRANSLATIONS.zh.default_chat_welcome, TRANSLATIONS.en.default_chat_welcome);
+
+  assert.strictEqual(DISASTER_GUIDELINES.de.before.title, 'Starkregen-Vorbereitung (Vorher)');
+  assert.strictEqual(DISASTER_GUIDELINES.zh.before.title, '季风与暴雨准备（事前）');
 });
 
 // ---------------------------------------------------------

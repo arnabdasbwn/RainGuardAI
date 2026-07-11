@@ -22,6 +22,28 @@ const State = {
   chatHistory: []
 };
 
+const LOCALE_BY_LANG = {
+  en: 'en-US',
+  hi: 'hi-IN',
+  bn: 'bn-IN',
+  te: 'te-IN',
+  ta: 'ta-IN',
+  mr: 'mr-IN',
+  gu: 'gu-IN',
+  kn: 'kn-IN',
+  ml: 'ml-IN',
+  pa: 'pa-IN',
+  or: 'or-IN',
+  as: 'as-IN',
+  ur: 'ur-IN',
+  ne: 'ne-NP',
+  es: 'es-ES',
+  fr: 'fr-FR',
+  de: 'de-DE',
+  zh: 'zh-CN',
+  ar: 'ar'
+};
+
 function escapeHtml(value) {
   return String(value ?? '')
     .replace(/&/g, '&amp;')
@@ -570,6 +592,12 @@ async function loadNearbyWeather(lat, lon, cityName) {
         caution: { en: 'Caution', hi: 'सावधानी', bn: 'সতর্কতা', te: 'జాగ్రత్త', ta: 'எச்சரிக்கை', mr: 'सावधानता', es: 'Precaución', fr: 'Précaution', ar: 'حذر' },
         alert: { en: 'High Danger', hi: 'उच्च खतरा', bn: 'উচ্চ বিপদ', te: 'అధిక ముప్పు', ta: 'அதிவேக ஆபத்து', mr: 'उच्च धोका', es: 'Peligro', fr: 'Danger Élevé', ar: 'خطر مرتفع' }
       };
+      badgeText.safe.de = 'Geringes Risiko';
+      badgeText.safe.zh = '低风险';
+      badgeText.caution.de = 'Vorsicht';
+      badgeText.caution.zh = '注意';
+      badgeText.alert.de = 'Hohe Gefahr';
+      badgeText.alert.zh = '高危险';
       const badgeLabel = (badgeText[meta.alert]?.[State.lang] || badgeText[meta.alert]?.['en'] || 'Caution').toUpperCase();
 
       const primaryTextMap = {
@@ -594,6 +622,10 @@ async function loadNearbyWeather(lat, lon, cityName) {
         fr: 'Définir comme Destination',
         ar: 'تعيين كوجهة سفر'
       };
+      primaryTextMap.de = 'Als Hauptort festlegen';
+      primaryTextMap.zh = '设为主要位置';
+      destinationTextMap.de = 'Als Ziel festlegen';
+      destinationTextMap.zh = '设为目的地';
       const primaryText = primaryTextMap[State.lang] || primaryTextMap['en'];
       const destinationText = destinationTextMap[State.lang] || destinationTextMap['en'];
 
@@ -696,7 +728,7 @@ function updateWeatherCard(data) {
   
   // Format current date
   const dateOptions = { weekday: 'long', day: 'numeric', month: 'long' };
-  displayDate.innerText = new Date().toLocaleDateString(State.lang === 'en' ? 'en-US' : 'hi-IN', dateOptions);
+  displayDate.innerText = new Date().toLocaleDateString(LOCALE_BY_LANG[State.lang] || 'en-US', dateOptions);
   
   displayTemp.innerText = `${data.temp}°C`;
   displayHumidity.innerText = `${data.humidity}%`;
@@ -717,6 +749,12 @@ function updateWeatherCard(data) {
     caution: { en: 'Caution', hi: 'सावधानी', bn: 'সতর্কতা', te: 'జాగ్రत्त', ta: 'எச்சரிக்கை', mr: 'सावधानता', es: 'Precaución', fr: 'Précaution', ar: 'حذر' },
     alert: { en: 'High Danger', hi: 'उच्च खतरा', bn: 'উচ্চ বিপদ', te: 'అధిక ముప్పు', ta: 'అதிவேக ஆபத்து', mr: 'उच्च धोका', es: 'Peligro', fr: 'Danger Élevé', ar: 'خطر مرتفع' }
   };
+  badgeText.safe.de = 'Geringes Risiko';
+  badgeText.safe.zh = '低风险';
+  badgeText.caution.de = 'Vorsicht';
+  badgeText.caution.zh = '注意';
+  badgeText.alert.de = 'Hohe Gefahr';
+  badgeText.alert.zh = '高危险';
   weatherBadge.querySelector('span').innerText = badgeText[meta.alert][State.lang] || badgeText[meta.alert]['en'];
 
   // Update Weather News carousel for the current location
