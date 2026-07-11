@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark" data-size="normal">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RainGuard AI - Monsoon Preparedness & Safety</title>
+  <meta name="description" content="GenAI-powered weather-aware monsoon preparedness system for plans, travel safety, and active response guidelines.">
+  <link rel="stylesheet" href="src/css/styles.css">
+</head>
+<body>
+
+  <!-- Offline Resiliency Warning Bar -->
+  <div id="offline-banner" class="offline-banner" role="status" aria-live="assertive" data-i18n="offline_banner_text">
+    ⚠️ You are currently offline. Running in local fail-safe mode. Saved plans and checklists are available.
+  </div>
+
+  <!-- Header Banner -->
+  <header>
+    <div class="logo-section">
+      <div class="logo-icon" aria-hidden="true">⛈️</div>
+      <div>
+        <h1>RainGuard AI</h1>
+        <span>Resilience Engine</span>
+      </div>
+    </div>
+
+    <!-- Accessibility & Configuration Controls -->
+    <div class="nav-controls">
+      <!-- Language Switcher -->
+      <label for="lang-select" class="sr-only" style="display:none;">Language</label>
+      <select id="lang-select" aria-label="Select Language">
+        <option value="en">English (EN)</option>
+        <option value="hi">हिन्दी (HI)</option>
+        <option value="bn">বাংলা (BN)</option>
+        <option value="te">తెలుగు (TE)</option>
+        <option value="ta">தமிழ் (TA)</option>
+        <option value="mr">मराठी (MR)</option>
+        <option value="es">Español (ES)</option>
+        <option value="fr">Français (FR)</option>
+        <option value="ar">العربية (AR)</option>
+      </select>
+
+      <!-- Font Size Controller -->
+      <label for="size-select" class="sr-only" style="display:none;">Text Size</label>
+      <select id="size-select" aria-label="Select Text Size">
+        <option value="normal">Normal Text</option>
+        <option value="large">Large Text</option>
+        <option value="extra-large">Extra Large</option>
+      </select>
+
+      <!-- Theme Switcher -->
+      <label for="theme-select" class="sr-only" style="display:none;">Contrast Mode</label>
+      <select id="theme-select" aria-label="Select Contrast Theme">
+        <option value="dark">Dark Theme (Default)</option>
+        <option value="light">Light Theme</option>
+        <option value="contrast">High Contrast (Accessibility)</option>
+      </select>
+
+      <!-- API Settings Trigger -->
+      <button id="btn-api-modal" class="btn-primary" aria-haspopup="dialog" aria-controls="modal-api-settings" data-i18n="api_settings">
+        🔑 API Settings
+      </button>
+    </div>
+  </header>
+
+  <!-- App Body Layout -->
+  <div class="app-container">
+    <!-- Sidebar Navigation -->
+    <nav aria-label="Main Navigation">
+      <button class="nav-link active" data-target="view-dashboard" aria-current="page">
+        <span aria-hidden="true">📊</span> <span class="nav-text" data-i18n="nav_dashboard">Dashboard</span>
+      </button>
+      <button class="nav-link" data-target="view-profiler">
+        <span aria-hidden="true">🏠</span> <span class="nav-text" data-i18n="nav_profiler">Resilience Profiler</span>
+      </button>
+      <button class="nav-link" data-target="view-checklist">
+        <span aria-hidden="true">📦</span> <span class="nav-text" data-i18n="nav_checklist">Emergency Kit</span>
+      </button>
+      <button class="nav-link" data-target="view-travel">
+        <span aria-hidden="true">🚗</span> <span class="nav-text" data-i18n="nav_travel">Travel Sentinel</span>
+      </button>
+      <button class="nav-link" data-target="view-guidelines">
+        <span aria-hidden="true">📖</span> <span class="nav-text" data-i18n="nav_guidelines">Safety Hub</span>
+      </button>
+      <button class="nav-link" data-target="view-chat">
+        <span aria-hidden="true">💬</span> <span class="nav-text" data-i18n="nav_chat">AI Responder</span>
+      </button>
+    </nav>
+
+    <!-- Main Workspace -->
+    <main id="main-content" tabindex="-1">
+
+      <!-- ============================================== -->
+      <!-- VIEW: DASHBOARD -->
+      <!-- ============================================== -->
+      <section id="view-dashboard" class="view-section active" aria-labelledby="dash-title">
+        <h2 id="dash-title" data-i18n="title_dashboard">Monsoon Dashboard</h2>
+        <p class="subtitle" data-i18n="sub_dashboard">Real-time localized hazards and safety advisories.</p>
+        
+        <div class="dashboard-grid">
+          <!-- Weather Card -->
+          <div class="card" id="weather-card">
+            <div class="weather-header">
+              <div class="weather-location">
+                <h3 id="display-city">Mumbai</h3>
+                <p id="display-date">Saturday, 11 July</p>
+              </div>
+              <div id="weather-badge" class="weather-status-badge status-safe">
+                <span>Safe</span>
+              </div>
+            </div>
+            
+            <div class="weather-main">
+              <div id="weather-icon" style="font-size: var(--font-size-4xl); margin-right: 0.5rem;" aria-hidden="true">☀️</div>
+              <div>
+                <div class="weather-temp" id="display-temp">--°C</div>
+                <div class="weather-desc" id="display-desc">Loading weather...</div>
+              </div>
+            </div>
+            
+            <div class="weather-details-grid">
+              <div class="weather-detail-item">
+                <span data-i18n="humidity">Humidity</span>
+                <strong id="display-humidity">--%</strong>
+              </div>
+              <div class="weather-detail-item">
+                <span data-i18n="precipitation">Precipitation</span>
+                <strong id="display-precip">-- mm</strong>
+              </div>
+              <div class="weather-detail-item">
+                <span data-i18n="wind_speed">Wind Speed</span>
+                <strong id="display-wind">-- km/h</strong>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Action Alert -->
+          <div class="card" style="display: flex; flex-direction: column; justify-content: space-between;">
+            <div>
+              <h3 style="font-size: var(--font-size-xl); margin-bottom: 0.75rem;" data-i18n="title_advisory">AI Safety Advisory</h3>
+              <div id="ai-quick-guidance" style="line-height: 1.5; color: var(--text-secondary);" data-i18n="default_advisory">
+                Please update your location or enter an API key to receive personalized AI recommendations.
+              </div>
+            </div>
+            <div style="margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 1rem;">
+              <span id="quick-alert-timestamp" style="font-size: var(--font-size-xs); color: var(--text-secondary);" data-i18n="last_updated">Last updated: Just now</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Local Weather Bulletin News Card -->
+        <div class="card" style="margin-bottom: 2rem; position: relative;">
+          <h3 style="font-size: var(--font-size-lg); margin-bottom: 1rem; display: flex; align-items: center; gap: 0.5rem;">
+            <span>📰</span> <span id="news-card-title" data-i18n="weather_news_title">Local Weather Bulletin</span>
+          </h3>
+          <div id="news-slides-container" style="min-height: 90px; position: relative; overflow: hidden; padding: 0.25rem 0;">
+            <p style="font-size: var(--font-size-sm); color: var(--text-secondary);" data-i18n="news_loading">Loading news bulletins for your location...</p>
+          </div>
+          <!-- Slider Dots / Navigation controls -->
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
+            <button id="btn-news-prev" class="btn-primary" style="padding: 0.3rem 0.75rem; font-size: 11px; background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">◀ Prev</button>
+            <div id="news-slides-indicators" style="display: flex; gap: 0.5rem; align-items: center;"></div>
+            <button id="btn-news-next" class="btn-primary" style="padding: 0.3rem 0.75rem; font-size: 11px; background-color: var(--bg-tertiary); border: 1px solid var(--border-color); color: var(--text-primary); border-radius: 8px;">Next ▶</button>
+          </div>
+        </div>
+
+        <!-- City search selection -->
+        <div class="card" style="margin-bottom: 2rem;">
+          <h3 style="font-size: var(--font-size-lg); margin-bottom: 1rem;" data-i18n="change_location">Change Location</h3>
+          <form id="form-location" style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+            <div style="flex: 1; min-width: 200px;">
+              <label for="input-city" class="sr-only" style="display:none;">City Name</label>
+              <input type="text" id="input-city" placeholder="Enter city name (e.g. Mumbai, New Delhi)" data-i18n="placeholder_city" required>
+            </div>
+            <button type="submit" class="btn-primary" data-i18n="fetch_weather">Fetch Weather</button>
+            <button type="button" id="btn-detect-gps" class="btn-primary" style="background-color: var(--bg-tertiary); color: var(--text-primary); border: 1px solid var(--border-color); display: flex; align-items: center; gap: 0.5rem;">
+              <span>📍</span> <span data-i18n="btn_detect_gps">Auto-Detect Location</span>
+            </button>
+          </form>
+        </div>
+
+        <!-- Nearby Weather Section -->
+        <div style="margin-bottom: 2rem;">
+          <h3 style="font-size: var(--font-size-lg); margin-bottom: 1rem;" data-i18n="nearby_weather_title">Nearby Sectors Weather Reports</h3>
+          <div id="nearby-weather-container" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem;">
+            <!-- Populated dynamically -->
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: PROFILE & PLANNER -->
+      <!-- ============================================== -->
+      <section id="view-profiler" class="view-section" aria-labelledby="profile-title">
+        <h2 id="profile-title" data-i18n="title_profiler">Resilience Profiler</h2>
+        <p class="subtitle" data-i18n="sub_profiler">Build a localized preparedness plan for your household.</p>
+        
+        <div class="card">
+          <form id="form-profile">
+            <div class="form-group">
+              <label for="profile-name" data-i18n="label_name">Your Name</label>
+              <input type="text" id="profile-name" placeholder="John Doe" data-i18n="placeholder_name" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="profile-city" data-i18n="label_city">Target Location / City</label>
+              <input type="text" id="profile-city" placeholder="Mumbai" data-i18n="placeholder_target_city" required>
+            </div>
+            
+            <div class="form-group">
+              <label for="profile-housing" data-i18n="label_housing">Housing Infrastructure Type</label>
+              <select id="profile-housing">
+                <option value="ground_floor" data-i18n="house_ground">Ground Floor (High Flood Risk)</option>
+                <option value="high_rise" data-i18n="house_high">Upper Floor / High-Rise Apartment</option>
+                <option value="temporary_shelter" data-i18n="house_temp">Temporary / Informal Housing</option>
+              </select>
+            </div>
+            
+            <div class="form-group">
+              <label for="profile-family" data-i18n="label_family">Household Family Size</label>
+              <input type="number" id="profile-family" min="1" max="25" value="1" required>
+            </div>
+            
+            <div class="form-group">
+              <label data-i18n="label_vuln">Specific Household Vulnerabilities</label>
+              <div class="checkbox-group">
+                <label class="checkbox-label">
+                  <input type="checkbox" name="vuln" value="infants">
+                  <span data-i18n="vuln_infants">Infants / Young Children</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="vuln" value="elderly">
+                  <span data-i18n="vuln_elderly">Elderly Members</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="vuln" value="pets">
+                  <span data-i18n="vuln_pets">Pets / Livestock</span>
+                </label>
+                <label class="checkbox-label">
+                  <input type="checkbox" name="vuln" value="chronic_illness">
+                  <span data-i18n="vuln_chronic">Chronic Medical Conditions</span>
+                </label>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="profile-notes" data-i18n="label_notes">Additional Safety Notes (Optional)</label>
+              <textarea id="profile-notes" rows="3" placeholder="e.g. nearby culvert overflows frequently, medicine requirements..." data-i18n="placeholder_notes"></textarea>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%; font-size: var(--font-size-md); font-weight: 600;" data-i18n="btn_generate">
+              Generate Preparedness Plan
+            </button>
+          </form>
+        </div>
+
+        <div id="plan-loading" style="display: none; margin-top: 2rem;">
+          <div class="card skeleton-pulse" style="height: 350px;"></div>
+        </div>
+
+        <!-- Generated Plan Container -->
+        <div id="plan-container" style="display: none;">
+          <div class="plan-display card" id="plan-markdown-output"></div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: EMERGENCY CHECKLIST -->
+      <!-- ============================================== -->
+      <section id="view-checklist" class="view-section" aria-labelledby="check-title">
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 2rem;">
+          <div>
+            <h2 id="check-title" data-i18n="title_checklist">Emergency Kit Manager</h2>
+            <p class="subtitle" style="margin-bottom: 0;" data-i18n="sub_checklist">Tick off items for your disaster kit. Profile vulnerabilities add specialized lists.</p>
+          </div>
+          <button id="btn-reset-checklist" style="background-color: var(--alert-danger); color: #fff; border: none;" data-i18n="btn_reset">Reset Items</button>
+        </div>
+
+        <div id="checklist-progress-bar" style="width: 100%; height: 8px; background-color: var(--bg-tertiary); border-radius: 4px; margin-bottom: 2rem; overflow: hidden;">
+          <div id="checklist-progress-fill" style="width: 0%; height: 100%; background-color: var(--accent); transition: width 0.3s ease-out;"></div>
+        </div>
+
+        <div id="checklist-holder"></div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: TRAVEL ADVISOR -->
+      <!-- ============================================== -->
+      <section id="view-travel" class="view-section" aria-labelledby="travel-title">
+        <h2 id="travel-title" data-i18n="title_travel">Travel Sentinel</h2>
+        <p class="subtitle" data-i18n="sub_travel">Check route flood vulnerabilities based on your transit method.</p>
+        
+        <div class="card">
+          <form id="form-travel">
+            <div class="form-group">
+              <label for="travel-origin" data-i18n="label_origin">Starting Location</label>
+              <input type="text" id="travel-origin" placeholder="e.g. Bandra West" data-i18n="placeholder_origin" required>
+            </div>
+            <div class="form-group">
+              <label for="travel-destination" data-i18n="label_destination">Destination</label>
+              <input type="text" id="travel-destination" placeholder="e.g. Mumbai Airport Terminal 2" data-i18n="placeholder_destination" required>
+            </div>
+            <div class="form-group">
+              <label for="travel-mode" data-i18n="label_mode">Transit Mode</label>
+              <select id="travel-mode">
+                <option value="walking" data-i18n="mode_walking">Walking / Pedestrian</option>
+                <option value="two_wheeler" data-i18n="mode_two_wheeler">Two-Wheeler (Motorcycle/Scooter)</option>
+                <option value="car" data-i18n="mode_car">Car / Taxi</option>
+                <option value="public_transit" data-i18n="mode_public">Public Transit (Local Trains/Buses)</option>
+              </select>
+            </div>
+            
+            <button type="submit" class="btn-primary" style="width: 100%; font-size: var(--font-size-md);" data-i18n="btn_evaluate">Evaluate Route Safety</button>
+          </form>
+        </div>
+
+        <div id="travel-loading" style="display: none; margin-top: 2rem;">
+          <div class="card skeleton-pulse" style="height: 200px;"></div>
+        </div>
+
+        <div id="travel-result-container" style="display: none; margin-top: 2rem;">
+          <div class="card" id="travel-markdown-output"></div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: OFFLINE GUIDELINES -->
+      <!-- ============================================== -->
+      <section id="view-guidelines" class="view-section" aria-labelledby="guide-title">
+        <h2 id="guide-title" data-i18n="title_guidelines">Safety Hub</h2>
+        <p class="subtitle" data-i18n="sub_guidelines">Fail-safe monsoon guidelines (Before, During, and After) & Emergency Contacts.</p>
+        
+        <div class="tabs-header" role="tablist">
+          <button class="tab-btn active" id="tab-before" role="tab" aria-selected="true" aria-controls="panel-before" data-i18n="tab_before">Before</button>
+          <button class="tab-btn" id="tab-during" role="tab" aria-selected="false" aria-controls="panel-during" data-i18n="tab_during">During</button>
+          <button class="tab-btn" id="tab-after" role="tab" aria-selected="false" aria-controls="panel-after" data-i18n="tab_after">After</button>
+          <button class="tab-btn" id="tab-contacts" role="tab" aria-selected="false" aria-controls="panel-contacts" data-i18n="tab_contacts">Contacts</button>
+        </div>
+
+        <!-- Before Panel -->
+        <div id="panel-before" class="tab-content active" role="tabpanel" aria-labelledby="tab-before">
+          <div class="card">
+            <h3 id="panel-before-title" style="margin-bottom: 1.5rem;">Monsoon Preparation (Before)</h3>
+            <ul id="list-before" class="guideline-list"></ul>
+          </div>
+        </div>
+
+        <!-- During Panel -->
+        <div id="panel-during" class="tab-content" role="tabpanel" aria-labelledby="tab-during">
+          <div class="card">
+            <h3 id="panel-during-title" style="margin-bottom: 1.5rem;">Active Storm & Flooding (During)</h3>
+            <ul id="list-during" class="guideline-list"></ul>
+          </div>
+        </div>
+
+        <!-- After Panel -->
+        <div id="panel-after" class="tab-content" role="tabpanel" aria-labelledby="tab-after">
+          <div class="card">
+            <h3 id="panel-after-title" style="margin-bottom: 1.5rem;">Post-Flood Recovery & Health (After)</h3>
+            <ul id="list-after" class="guideline-list"></ul>
+          </div>
+        </div>
+
+        <!-- Emergency Contacts Panel -->
+        <div id="panel-contacts" class="tab-content" role="tabpanel" aria-labelledby="tab-contacts">
+          <div class="card">
+            <h3 style="margin-bottom: 1.5rem;" data-i18n="title_contacts">Verified Emergency Contacts</h3>
+            <div id="contacts-holder" style="display: grid; grid-template-columns: 1fr 1fr; gap: 1rem;"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ============================================== -->
+      <!-- VIEW: CHATBOT -->
+      <!-- ============================================== -->
+      <section id="view-chat" class="view-section" aria-labelledby="chat-title">
+        <h2 id="chat-title" data-i18n="title_chat">AI Safety Responder</h2>
+        <p class="subtitle" data-i18n="sub_chat">Interactive multilingual advice. Strictly grounded in safety protocols.</p>
+        
+        <div class="chat-window">
+          <div class="chat-history" id="chat-history-box" role="log" aria-live="polite">
+            <div class="chat-bubble model" id="chat-welcome-bubble" data-i18n="default_chat_welcome">
+              Hello! I am your RainGuard emergency safety advisor. How can I help you prepare or stay safe during this monsoon season?
+            </div>
+          </div>
+          
+          <form id="form-chat" class="chat-input-area">
+            <input type="text" id="chat-input" placeholder="Type your safety or preparedness question..." data-i18n="placeholder_chat" required autocomplete="off" aria-label="Chat input">
+            <button type="submit" class="btn-primary" data-i18n="btn_send">Send</button>
+          </form>
+        </div>
+      </section>
+
+    </main>
+  </div>
+
+  <!-- Footer -->
+  <footer style="background-color: var(--bg-secondary); border-top: 1px solid var(--border-color); text-align: center; padding: 1.5rem; font-size: var(--font-size-sm); color: var(--text-secondary);">
+    <p data-i18n="footer">© 2026 RainGuard AI. Preparedness safeguards lives. Protect your community.</p>
+  </footer>
+
+  <!-- ============================================== -->
+  <!-- MODAL DIALOG: API SETTINGS -->
+  <!-- ============================================== -->
+  <div id="modal-api-settings" class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3 id="modal-title" data-i18n="title_api">API Configurations</h3>
+        <button id="btn-modal-close" class="modal-close" aria-label="Close Settings Modal">&times;</button>
+      </div>
+      <form id="form-api-settings">
+        <div class="form-group">
+          <label for="input-api-key" data-i18n="label_api_key">Google Gemini API Key</label>
+          <input type="text" id="input-api-key" placeholder="AIzaSy..." autocomplete="off">
+          <p style="font-size: var(--font-size-xs); color: var(--text-secondary); margin-top: 0.5rem;" data-i18n="sub_api_key">
+            This key is saved locally in your browser (session storage/local storage) and is only sent directly to Google's GenAI endpoint.
+          </p>
+        </div>
+        <div style="display: flex; justify-content: flex-end; gap: 1rem; margin-top: 1.5rem;">
+          <button type="button" id="btn-api-clear" style="background-color: transparent; border-color: var(--alert-danger); color: var(--alert-danger);" data-i18n="btn_clear_key">Clear Key</button>
+          <button type="submit" class="btn-primary" data-i18n="btn_save_settings">Save Settings</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modules Core script binding -->
+  <script type="module" src="src/js/app.js"></script>
+</body>
+</html>

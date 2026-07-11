@@ -1,0 +1,20 @@
+{
+  "name": "rainguard-ai",
+  "version": "1.0.0",
+  "description": "GenAI-powered Monsoon Preparedness & Disaster Response Platform",
+  "main": "index.html",
+  "scripts": {
+    "dev": "node server.js",
+    "test": "node --test tests/app.test.js"
+  },
+  "keywords": [
+    "monsoon",
+    "preparedness",
+    "gemini",
+    "weather",
+    "disaster"
+  ],
+  "author": "Antigravity",
+  "license": "MIT",
+  "type": "module"
+}
