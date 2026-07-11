@@ -905,7 +905,9 @@ function initProfiler() {
       const planHtml = compileFallbackPreparednessPlan(profile, State.lang);
       
       let warningMessage = '';
-      if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
+      const isConfigMissing = err.message.includes('API_KEY_MISSING') || err.message.includes('PROXY_CONFIG_MISSING');
+      const isProxyFailure = err.message.includes('PROXY_REQUEST_FAILED');
+      if (isConfigMissing) {
         warningMessage = `⚠️ ${State.lang === 'en' ? 'Server Gemini API key is not configured. Displaying local dynamic plan based on your profile inputs.' : 'सर्वर जेमिनी एपीआई कुंजी कॉन्फ़िगर नहीं है। आपके प्रोफाइल के अनुसार स्थानीय योजना प्रदर्शित की जा रही है।'}`;
       } else {
         warningMessage = `❌ ${State.lang === 'en' ? 'GenAI Service error. Switched to local dynamic fallback plan.' : 'जेनेरेटिव एआई सेवा त्रुटि। स्थानीय फॉलबैक सुरक्षा योजना लोड की गई है।'}`;
@@ -913,7 +915,7 @@ function initProfiler() {
 
       planOutput.innerHTML = `
         <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--alert-caution); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-caution); font-weight: 500;">
-          ${warningMessage} ${err.message.includes('Proxy Error') ? `(${err.message})` : ''}
+          ${warningMessage} ${isProxyFailure ? `(${err.message})` : ''}
         </div>
         ${parseMarkdown(planHtml)}
       `;
@@ -1084,7 +1086,9 @@ function initTravelSentinel() {
       const fallbackText = getFallbackTravelAdvisory(details, weather);
       
       let warningMessage = '';
-      if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
+      const isConfigMissing = err.message.includes('API_KEY_MISSING') || err.message.includes('PROXY_CONFIG_MISSING');
+      const isProxyFailure = err.message.includes('PROXY_REQUEST_FAILED');
+      if (isConfigMissing) {
         warningMessage = State.lang === 'en'
           ? 'Server Gemini API key is not configured. Evaluating travel risks using local static engine.'
           : 'सर्वर जेमिनी एपीआई कुंजी कॉन्फ़िगर नहीं है। स्थानीय विश्लेषण इंजन द्वारा यात्रा सुरक्षा का आकलन किया गया है।';
@@ -1096,7 +1100,7 @@ function initTravelSentinel() {
 
       travelOutput.innerHTML = `
         <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--alert-caution); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-caution); font-weight: 500;">
-          ⚠️ ${warningMessage} ${err.message.includes('Proxy Error') ? `(${err.message})` : ''}
+          ⚠️ ${warningMessage} ${isProxyFailure ? `(${err.message})` : ''}
         </div>
         ${parseMarkdown(fallbackText)}
       `;
@@ -1308,7 +1312,9 @@ function initChatbot() {
       const fallbackAnswer = getFallbackChatAnswer(question);
       
       let warningMessage = '';
-      if (err.message.includes('API_KEY_MISSING') || err.message.includes('Proxy Error')) {
+      const isConfigMissing = err.message.includes('API_KEY_MISSING') || err.message.includes('PROXY_CONFIG_MISSING');
+      const isProxyFailure = err.message.includes('PROXY_REQUEST_FAILED');
+      if (isConfigMissing) {
         warningMessage = State.lang === 'en'
           ? 'Server Gemini API key is not configured. Switched to offline keyword matcher.'
           : 'सर्वर जेमिनी एपीआई कुंजी कॉन्फ़िगर नहीं है। स्थानीय खोज इंजन सक्रिय किया गया है।';
@@ -1320,7 +1326,7 @@ function initChatbot() {
 
       appendChatBubble('model', `
         <div style="color: var(--alert-danger); margin-bottom: 0.5rem; font-size: var(--font-size-xs);">
-          ⚠️ ${warningMessage} ${err.message.includes('Proxy Error') ? `(${err.message})` : ''}
+          ⚠️ ${warningMessage} ${isProxyFailure ? `(${err.message})` : ''}
         </div>
         ${parseMarkdown(fallbackAnswer)}
       `);

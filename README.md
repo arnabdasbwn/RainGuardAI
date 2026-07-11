@@ -34,7 +34,7 @@ We prioritized **extreme deployment reliability, loading speed, and offline resi
 ---
 
 ## 4. AI Services Used
-*   **Google Gemini API**: Uses `gemini-2.5-flash` through the server-side `/api/gemini` proxy when a Gemini API key is configured on the server.
+*   **Google Gemini API**: Uses `gemini-3.5-flash` through the server-side `/api/gemini` proxy when a Gemini API key is configured on the server, with model fallback support.
     *   *Plan Advisor*: Tailors preparedness actions based on family profiling.
     *   *Travel Sentinel*: Computes safety ratings (Green, Yellow, Red) based on route and transit type.
     *   *First Responder Chat*: Interactive safety Q&A chatbot.

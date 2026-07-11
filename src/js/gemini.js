@@ -5,7 +5,7 @@
 import { Storage } from './storage.js';
 
 // Default model to use
-const PRIMARY_MODEL = 'gemini-2.5-flash';
+const PRIMARY_MODEL = 'gemini-3.5-flash';
 const FALLBACK_MODEL = 'gemini-2.5-flash';
 
 const SYSTEM_INSTRUCTIONS = {
@@ -76,22 +76,23 @@ export const Gemini = {
         const text = await proxyResponse.text();
         return text;
       } else {
-        proxyErrorText = await proxyResponse.text();
-        try {
-          const errObj = JSON.parse(proxyErrorText);
-          if (errObj.error) proxyErrorText = errObj.error;
-        } catch (_) {}
+        proxyErrorText = await this._readErrorText(proxyResponse);
+        if (proxyResponse.status === 503 && proxyErrorText.toLowerCase().includes('not configured')) {
+          proxyErrorText = `PROXY_CONFIG_MISSING: ${proxyErrorText}`;
+        } else {
+          proxyErrorText = `PROXY_REQUEST_FAILED: ${proxyErrorText}`;
+        }
       }
     } catch (proxyError) {
       console.warn('Backend API proxy not available or failed.', proxyError);
-      proxyErrorText = proxyError.message;
+      proxyErrorText = `PROXY_REQUEST_FAILED: ${proxyError.message}`;
     }
 
     // 2. Fallback to client-side direct request (using browser-saved API key)
     const key = Storage.getApiKey();
     if (!key || key === 'MOCK_GEMINI_API_KEY_PLACEHOLDER') {
       if (proxyErrorText) {
-        throw new Error(`Proxy Error: ${proxyErrorText}`);
+        throw new Error(proxyErrorText);
       }
       throw new Error('API_KEY_MISSING');
     }
@@ -111,14 +112,13 @@ export const Gemini = {
    * Private fetch runner
    */
   async _executeRequest(model, key, body) {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`;
-    
-    const response = await fetch(url, {
+    const response = await fetch('https://generativelanguage.googleapis.com/v1beta/interactions', {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        'x-goog-api-key': key
       },
-      body: JSON.stringify(body)
+      body: JSON.stringify(this._toInteractionsPayload(body, model))
     });
 
     if (response.status === 401 || response.status === 403) {
@@ -126,16 +126,70 @@ export const Gemini = {
     }
 
     if (!response.ok) {
-      const errorText = await response.text();
+      const errorText = await this._readErrorText(response);
       throw new Error(`Gemini API Error (${response.status}): ${errorText}`);
     }
 
     const data = await response.json();
+    const text = this._extractInteractionsText(data);
     
-    if (data.candidates && data.candidates[0] && data.candidates[0].content && data.candidates[0].content.parts[0]) {
-      return data.candidates[0].content.parts[0].text;
-    } else {
-      throw new Error('Incomplete response received from GenAI API.');
+    if (text) return text;
+    throw new Error('Incomplete response received from GenAI API.');
+  },
+
+  _toInteractionsPayload(body, model) {
+    const systemInstruction = (body.systemInstruction?.parts || [])
+      .map(part => part?.text)
+      .filter(Boolean)
+      .join('\n');
+    const input = (body.contents || [])
+      .flatMap(content => content.parts || [])
+      .map(part => part?.text)
+      .filter(Boolean)
+      .join('\n\n');
+
+    const payload = {
+      model,
+      input
+    };
+
+    if (systemInstruction) payload.system_instruction = systemInstruction;
+    if (body.generationConfig) {
+      payload.generation_config = {
+        temperature: body.generationConfig.temperature,
+        max_output_tokens: body.generationConfig.maxOutputTokens
+      };
+    }
+
+    return payload;
+  },
+
+  _extractInteractionsText(data) {
+    if (typeof data.output_text === 'string') return data.output_text;
+    if (typeof data.outputText === 'string') return data.outputText;
+
+    const lastStep = Array.isArray(data.steps) ? data.steps[data.steps.length - 1] : null;
+    const content = lastStep?.content;
+    if (Array.isArray(content)) {
+      return content
+        .map(item => item?.text || item?.content || '')
+        .filter(Boolean)
+        .join('\n');
+    }
+
+    return '';
+  },
+
+  async _readErrorText(response) {
+    const text = await response.text();
+    if (!text) return `Request failed with status ${response.status}.`;
+
+    try {
+      const parsed = JSON.parse(text);
+      if (typeof parsed.error === 'string') return parsed.error;
+      return parsed.error?.message || parsed.message || text;
+    } catch (_) {
+      return text;
     }
   },
 
