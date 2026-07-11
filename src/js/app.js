@@ -21,13 +21,42 @@ const State = {
   chatHistory: []
 };
 
+function escapeHtml(value) {
+  return String(value ?? '')
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;');
+}
+
+function normalizeUserText(value, maxLength = 160) {
+  return String(value ?? '')
+    .replace(/[\u0000-\u001F\u007F]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .slice(0, maxLength);
+}
+
+function validateRequiredText(value, label, maxLength = 160) {
+  const normalized = normalizeUserText(value, maxLength);
+  if (!normalized) {
+    throw new Error(`${label} is required.`);
+  }
+  if (/[<>]/.test(normalized)) {
+    throw new Error(`${label} cannot contain angle brackets.`);
+  }
+  return normalized;
+}
+
+function showValidationError(message) {
+  window.alert(message);
+}
+
 // Markdown Parser Helper
 function parseMarkdown(text) {
   if (!text) return '';
-  let html = text
-    .replace(/&/g, '&amp;')
-    .replace(/</g, '&lt;')
-    .replace(/>/g, '&gt;');
+  let html = escapeHtml(text);
   
   // Headers
   html = html.replace(/^### (.*$)/gim, '<h3>$1</h3>');
@@ -72,16 +101,6 @@ function parseMarkdown(text) {
   }
   
   return processedLines.join('\n');
-}
-
-// Optional browser key fallback retained for local demos without a server env key.
-function hasRealApiKey() {
-  try {
-    const saved = localStorage.getItem('rainguard_gemini_api_key');
-    return saved !== null && saved.trim() !== '';
-  } catch (e) {
-    return false;
-  }
 }
 
 // Request permission for Web Notifications API
@@ -272,8 +291,8 @@ function updateWeatherNews(data) {
     slide.style.animation = 'fadeIn 0.5s ease';
     
     slide.innerHTML = `
-      <h4 style="font-size: var(--font-size-md); font-weight: 600; color: var(--accent); margin-bottom: 0.5rem;">${item.title}</h4>
-      <p style="font-size: var(--font-size-sm); color: var(--text-primary); line-height: 1.5; margin-bottom: 0;">${item.desc}</p>
+      <h4 style="font-size: var(--font-size-md); font-weight: 600; color: var(--accent); margin-bottom: 0.5rem;">${escapeHtml(item.title)}</h4>
+      <p style="font-size: var(--font-size-sm); color: var(--text-primary); line-height: 1.5; margin-bottom: 0;">${escapeHtml(item.desc)}</p>
     `;
     container.appendChild(slide);
     
@@ -357,23 +376,16 @@ function initNavigation() {
   });
 }
 
-// 2. Settings Controller (Language, Size, Theme, API)
+// 2. Settings Controller (Language, Size, Theme)
 function initSettings() {
   const langSelect = document.getElementById('lang-select');
   const sizeSelect = document.getElementById('size-select');
   const themeSelect = document.getElementById('theme-select');
-  
-  const apiModal = document.getElementById('modal-api-settings');
-  const btnApiModal = document.getElementById('btn-api-modal');
-  const btnModalClose = document.getElementById('btn-modal-close');
-  const formApiSettings = document.getElementById('form-api-settings');
-  const btnApiClear = document.getElementById('btn-api-clear');
-  const inputApiKey = document.getElementById('input-api-key');
 
   // Load Saved Settings
   const savedTheme = Storage.getTheme() || 'dark';
   document.documentElement.setAttribute('data-theme', savedTheme);
-  themeSelect.value = savedTheme;
+  if (themeSelect) themeSelect.value = savedTheme;
 
   // Language Change handler
   if (langSelect) {
@@ -405,56 +417,6 @@ function initSettings() {
     });
   }
 
-  if (btnApiModal && apiModal && formApiSettings) {
-    const savedApiKey = localStorage.getItem('rainguard_gemini_api_key');
-    if (savedApiKey && inputApiKey) {
-      inputApiKey.value = savedApiKey;
-    }
-
-    // Modal Open
-    btnApiModal.addEventListener('click', () => {
-      apiModal.classList.add('active');
-      if (inputApiKey) inputApiKey.focus();
-    });
-
-    // Modal Close
-    const closeModal = () => {
-      apiModal.classList.remove('active');
-      btnApiModal.focus();
-    };
-    
-    if (btnModalClose) btnModalClose.addEventListener('click', closeModal);
-    
-    // Close on Escape key
-    window.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape' && apiModal.classList.contains('active')) {
-        closeModal();
-      }
-    });
-
-    // API Form Submit
-    formApiSettings.addEventListener('submit', (e) => {
-      e.preventDefault();
-      if (inputApiKey) Storage.setApiKey(inputApiKey.value);
-      closeModal();
-      // Trigger advisory update on dashboard
-      if (State.currentWeather) {
-        triggerAiAdvisory(State.currentWeather);
-      }
-    });
-
-    // API Clear
-    if (btnApiClear) {
-      btnApiClear.addEventListener('click', () => {
-        if (inputApiKey) inputApiKey.value = '';
-        Storage.setApiKey(null);
-        closeModal();
-        if (State.currentWeather) {
-          triggerAiAdvisory(State.currentWeather);
-        }
-      });
-    }
-  }
 }
 
 // 3. Language Translation Engine
@@ -482,9 +444,11 @@ async function initWeather(defaultCity = 'Mumbai') {
   formLocation.addEventListener('submit', async (e) => {
     e.preventDefault();
     requestNotificationPermission();
-    const city = inputCity.value.trim();
-    if (city) {
+    try {
+      const city = validateRequiredText(inputCity.value, 'City name', 120);
       await loadWeatherForCity(city);
+    } catch (err) {
+      showValidationError(err.message);
     }
   });
 
@@ -625,27 +589,27 @@ async function loadNearbyWeather(lat, lon, cityName) {
 
       card.innerHTML = `
         <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 0.75rem;">
-          <h4 style="font-size: var(--font-size-md); font-weight: 600;">${data.cityName}</h4>
-          <span class="weather-status-badge status-${meta.alert}" style="font-size: 10px; padding: 0.2rem 0.6rem;">${badgeLabel}</span>
+          <h4 style="font-size: var(--font-size-md); font-weight: 600;">${escapeHtml(data.cityName)}</h4>
+          <span class="weather-status-badge status-${meta.alert}" style="font-size: 10px; padding: 0.2rem 0.6rem;">${escapeHtml(badgeLabel)}</span>
         </div>
         <div style="display: flex; align-items: center; gap: 1rem;">
-          <span style="font-size: var(--font-size-3xl);">${meta.icon}</span>
+          <span style="font-size: var(--font-size-3xl);">${escapeHtml(meta.icon)}</span>
           <div>
-            <strong style="font-size: var(--font-size-xl);">${data.temp}°C</strong>
-            <span style="display: block; font-size: var(--font-size-sm); color: var(--text-secondary);">${meta.text}</span>
+            <strong style="font-size: var(--font-size-xl);">${escapeHtml(data.temp)}°C</strong>
+            <span style="display: block; font-size: var(--font-size-sm); color: var(--text-secondary);">${escapeHtml(meta.text)}</span>
           </div>
         </div>
         <div style="display: flex; gap: 1rem; margin-top: 0.75rem; font-size: var(--font-size-xs); color: var(--text-secondary); border-top: 1px solid var(--border-color); padding-top: 0.5rem; margin-bottom: 0.75rem;">
-          <span>💧 H: ${data.humidity}%</span>
-          <span>🌧️ P: ${data.precipitation}mm</span>
-          <span>💨 W: ${data.windSpeed}km/h</span>
+          <span>💧 H: ${escapeHtml(data.humidity)}%</span>
+          <span>🌧️ P: ${escapeHtml(data.precipitation)}mm</span>
+          <span>💨 W: ${escapeHtml(data.windSpeed)}km/h</span>
         </div>
         <div style="display: flex; gap: 0.5rem; border-top: 1px solid var(--border-color); padding-top: 0.75rem;">
           <button class="btn-nearby-primary" style="flex: 1;">
-            📍 <span>${primaryText}</span>
+            📍 <span>${escapeHtml(primaryText)}</span>
           </button>
           <button class="btn-nearby-travel" style="flex: 1;">
-            🚗 <span>${destinationText}</span>
+            🚗 <span>${escapeHtml(destinationText)}</span>
           </button>
         </div>
       `;
@@ -878,15 +842,25 @@ function initProfiler() {
     e.preventDefault();
     
     const vulnerabilities = Array.from(document.querySelectorAll('input[name="vuln"]:checked')).map(cb => cb.value);
-    
-    const profile = {
-      name: document.getElementById('profile-name').value.trim(),
-      city: document.getElementById('profile-city').value.trim(),
-      housing: document.getElementById('profile-housing').value,
-      familySize: document.getElementById('profile-family').value,
-      vulnerabilities: vulnerabilities,
-      notes: document.getElementById('profile-notes').value.trim()
-    };
+    let profile;
+    try {
+      const familySize = Number(document.getElementById('profile-family').value);
+      if (!Number.isInteger(familySize) || familySize < 1 || familySize > 25) {
+        throw new Error('Household family size must be between 1 and 25.');
+      }
+
+      profile = {
+        name: validateRequiredText(document.getElementById('profile-name').value, 'Name', 80),
+        city: validateRequiredText(document.getElementById('profile-city').value, 'Target city', 120),
+        housing: document.getElementById('profile-housing').value,
+        familySize,
+        vulnerabilities: vulnerabilities,
+        notes: normalizeUserText(document.getElementById('profile-notes').value, 500)
+      };
+    } catch (err) {
+      showValidationError(err.message);
+      return;
+    }
     
     // Save profile to storage
     Storage.setProfile(profile);
@@ -915,7 +889,7 @@ function initProfiler() {
 
       planOutput.innerHTML = `
         <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--alert-caution); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-caution); font-weight: 500;">
-          ${warningMessage} ${isProxyFailure ? `(${err.message})` : ''}
+          ${warningMessage} ${isProxyFailure ? `(${escapeHtml(err.message)})` : ''}
         </div>
         ${parseMarkdown(planHtml)}
       `;
@@ -1066,11 +1040,17 @@ function initTravelSentinel() {
   formTravel.addEventListener('submit', async (e) => {
     e.preventDefault();
     
-    const details = {
-      origin: document.getElementById('travel-origin').value.trim(),
-      destination: document.getElementById('travel-destination').value.trim(),
-      mode: document.getElementById('travel-mode').value
-    };
+    let details;
+    try {
+      details = {
+        origin: validateRequiredText(document.getElementById('travel-origin').value, 'Starting location', 120),
+        destination: validateRequiredText(document.getElementById('travel-destination').value, 'Destination', 120),
+        mode: document.getElementById('travel-mode').value
+      };
+    } catch (err) {
+      showValidationError(err.message);
+      return;
+    }
     
     travelContainer.style.display = 'none';
     travelLoading.style.display = 'block';
@@ -1100,7 +1080,7 @@ function initTravelSentinel() {
 
       travelOutput.innerHTML = `
         <div style="background-color: rgba(245, 158, 11, 0.1); border: 1px solid var(--alert-caution); padding: 1rem; border-radius: var(--radius); margin-bottom: 1.5rem; color: var(--alert-caution); font-weight: 500;">
-          ⚠️ ${warningMessage} ${isProxyFailure ? `(${err.message})` : ''}
+          ⚠️ ${warningMessage} ${isProxyFailure ? `(${escapeHtml(err.message)})` : ''}
         </div>
         ${parseMarkdown(fallbackText)}
       `;
@@ -1288,8 +1268,13 @@ function initChatbot() {
   
   formChat.addEventListener('submit', async (e) => {
     e.preventDefault();
-    const question = chatInput.value.trim();
-    if (!question) return;
+    let question;
+    try {
+      question = validateRequiredText(chatInput.value, 'Safety question', 500);
+    } catch (err) {
+      showValidationError(err.message);
+      return;
+    }
     
     // Clear input
     chatInput.value = '';
@@ -1326,7 +1311,7 @@ function initChatbot() {
 
       appendChatBubble('model', `
         <div style="color: var(--alert-danger); margin-bottom: 0.5rem; font-size: var(--font-size-xs);">
-          ⚠️ ${warningMessage} ${isProxyFailure ? `(${err.message})` : ''}
+          ⚠️ ${warningMessage} ${isProxyFailure ? `(${escapeHtml(err.message)})` : ''}
         </div>
         ${parseMarkdown(fallbackAnswer)}
       `);
@@ -1339,7 +1324,11 @@ function appendChatBubble(sender, contentHtml) {
   const box = document.getElementById('chat-history-box');
   const bubble = document.createElement('div');
   bubble.className = `chat-bubble ${sender}`;
-  bubble.innerHTML = contentHtml;
+  if (sender === 'user') {
+    bubble.innerText = contentHtml;
+  } else {
+    bubble.innerHTML = contentHtml;
+  }
   box.appendChild(bubble);
   
   // Scroll to bottom

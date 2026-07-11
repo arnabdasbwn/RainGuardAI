@@ -24,7 +24,7 @@ RainGuard AI calls Gemini through the server-side `/api/gemini` proxy:
 
 *   Your production API key stays in server environment variables.
 *   The key is never exposed in browser JavaScript.
-*   Requests are forwarded by the backend to the official Google Generative Language API endpoint (`https://generativelanguage.googleapis.com`).
+*   Requests are forwarded by the backend to the official Google Generative Language REST endpoint (`https://generativelanguage.googleapis.com/v1beta/interactions`).
 
 ## 3. Fallback Mechanism
 If no key is configured, or if the Gemini API request fails:
